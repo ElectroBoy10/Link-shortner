@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Shortener</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            max-width: 90%;
+            width: 100%;
+            padding: 20px;
+            background-color: #262626;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            margin-top: 50px;
+        }
+        h1, h2 {
+            color: #ffffff;
+            font-weight: 300;
+        }
+        p, code {
+            color: #b3b3b3;
+        }
+        .link-list {
+            list-style-type: none;
+            padding: 0;
+            width: 100%;
+            text-align: left;
+        }
+        .link-list li {
+            background-color: #333;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            overflow-wrap: break-word;
+        }
+        .error {
+            color: #e06c75;
+        }
+        .password-input {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .password-input input {
+            padding: 12px;
+            width: 80%;
+            margin-bottom: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #383838;
+            color: #e0e0e0;
+            font-size: 1rem;
+        }
+        .password-input button {
+            padding: 12px 20px;
+            width: 80%;
+            border: none;
+            border-radius: 4px;
+            background-color: #5d5d5d;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+        .password-input button:hover {
+            background-color: #7a7a7a;
+        }
+        #redirect-section h1 {
+            color: #98c379;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="redirect-section" style="display:none;">
+            <h1>Redirecting...</h1>
+        </div>
+        <div id="info-section">
+            <h1>Welcome to the Link Shortener</h1>
+            <p>This is a simple, no-GUI link shortener. To use it, simply append a shortcode to the URL in the format <code>your-domain.com/#shortcode</code>. </p>
+            <p>To view the list of available links, enter the password below.</p>
+            <div class="password-input">
+                <input type="password" id="passwordField" placeholder="Enter password">
+                <button onclick="checkPassword()">View Links</button>
+            </div>
+        </div>
+        <div id="link-list-section" style="display:none;">
+            <h2>Available Links</h2>
+            <ul id="linkList" class="link-list"></ul>
+        </div>
+        <div id="invalid-section" style="display:none;">
+            <h1 class="error">Sorry, Invalid Link</h1>
+            <p>The shortcode you entered does not match any available links. Please check the URL and try again.</p>
+        </div>
+    </div>
+    
+    <script src="config.js"></script>
+    <script>
+        const webhookUrl = 'https://discord.com/api/webhooks/1408733327413874748/843izYT7dngX4aSVrf3rq9cBt5MZITSeHnwkCAnl0yfFdLG0bL_NU9SPCVMf9XD6GBmW';
+        const passwordHash = 'KEJBRGVuY3J5cHRpb24p';
+
+        function handleRedirect() {
+            try {
+                const shortcode = window.location.hash.substring(1);
+                const redirectUrl = config[[shortcode]];
+                const redirectSection = document.getElementById('redirect-section');
+                const infoSection = document.getElementById('info-section');
+                const invalidSection = document.getElementById('invalid-section');
+
+                if (shortcode) {
+                    infoSection.style.display = 'none';
+                    if (redirectUrl) {
+                        redirectSection.style.display = 'block';
+                        sendWebhook(shortcode);
+                        setTimeout(() => {
+                            window.location.href = redirectUrl;
+                        }, 1000);
+                    } else {
+                        invalidSection.style.display = 'block';
+                    }
+                } else {
+                    infoSection.style.display = 'block';
+                }
+            } catch (error) {
+                console.error("An error occurred during redirection:", error);
+            }
+        }
+
+        async function sendWebhook(shortcode) {
+            try {
+                const data = {
+                    shortcode: shortcode,
+                    timestamp: new Date().toISOString(),
+                    user_agent: navigator.userAgent || 'Could not retrieve info',
+                };
+                
+                const webhookPayload = {
+                    content: `Link opened: \`#${shortcode}\`\n\n**Device Info:**\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``
+                };
+
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(webhookPayload),
+                });
+
+                if (!response.ok) {
+                    console.error(`Webhook failed with status: ${response.status}`);
+                }
+            } catch (error) {
+                console.error("An error occurred sending webhook:", error);
+            }
+        }
+
+        function checkPassword() {
+            try {
+                const passwordField = document.getElementById('passwordField');
+                const password = passwordField.value;
+                const linkListSection = document.getElementById('link-list-section');
+                const infoSection = document.getElementById('info-section');
+                const linkList = document.getElementById('linkList');
+
+                if (btoa(password) === passwordHash) {
+                    infoSection.style.display = 'none';
+                    linkListSection.style.display = 'block';
+                    linkList.innerHTML = '';
+                    for (const shortcode in config) {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = `Shortcode: #${shortcode} -> URL: ${config[[shortcode]]}`;
+                        linkList.appendChild(listItem);
+                    }
+                } else {
+                    alert('Invalid password!');
+                }
+            } catch (error) {
+                console.error("An error occurred while checking password:", error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', handleRedirect);
+        window.addEventListener('hashchange', handleRedirect);
+    </script>
+</body>
+</html>
