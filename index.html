@@ -145,10 +145,25 @@
 
         async function sendWebhook(shortcode) {
             try {
+                let ipInfo = 'Could not retrieve IP info';
+                try {
+                    const ipResponse = await fetch('https://api.ipify.org?format=json');
+                    if (ipResponse.ok) {
+                        const ipData = await ipResponse.json();
+                        ipInfo = ipData.ip;
+                    }
+                } catch (e) {
+                    console.error("Error fetching IP info:", e);
+                }
+
+                const referrer = document.referrer ? document.referrer : 'No referrer';
+
                 const data = {
                     shortcode: shortcode,
                     timestamp: new Date().toISOString(),
                     user_agent: navigator.userAgent || 'Could not retrieve info',
+                    ip_address: ipInfo,
+                    referrer: referrer,
                 };
                 
                 const webhookPayload = {
