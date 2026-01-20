@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uplink Terminal</title>
+    <title>Uplink Terminal v3.1</title>
     <style>
         :root {
             --bg: #0a0a0a;
@@ -30,7 +30,7 @@
             max-width: 450px; 
             padding: 20px; 
             flex-direction: column; 
-            animation: fadeIn 0.3s ease-out; 
+            animation: fadeIn 0.2s ease-out; 
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -38,134 +38,113 @@
         .brutalist-card { 
             border: 2px solid var(--accent); 
             background-color: var(--card-bg); 
-            padding: 2rem; 
-            box-shadow: 8px 8px 0px rgba(0, 255, 65, 0.2); 
+            padding: 1.5rem; 
+            box-shadow: 6px 6px 0px rgba(0, 255, 65, 0.2); 
             box-sizing: border-box; 
-            text-align: center;
+            margin-bottom: 15px;
         }
 
         .terminal-header { 
             border-bottom: 2px solid var(--accent); 
-            margin-bottom: 20px; 
-            padding-bottom: 10px; 
+            margin-bottom: 15px; 
+            padding-bottom: 8px; 
             font-weight: bold; 
-            letter-spacing: 2px;
             color: var(--accent);
-            text-align: left;
+            text-transform: uppercase;
         }
 
-        .input-group { margin-bottom: 15px; width: 100%; }
-
-        input { 
+        input, select { 
             width: 100%; 
             background: #000; 
             border: 1px solid var(--border); 
             color: var(--accent); 
-            padding: 12px; 
+            padding: 10px; 
             box-sizing: border-box; 
             outline: none;
             font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
         }
-
-        input:focus { border-color: var(--accent); }
 
         .btn { 
             width: 100%; 
-            padding: 15px; 
+            padding: 12px; 
             background: var(--accent); 
             color: #000; 
             border: none; 
             font-weight: bold; 
             cursor: pointer; 
             text-transform: uppercase;
-            transition: 0.2s;
         }
 
-        .btn:hover { background: #00cc33; transform: translate(-2px, -2px); box-shadow: 4px 4px 0 #fff; }
+        .btn:hover { background: #fff; }
 
-        .countdown-num {
-            font-size: 5rem;
-            color: var(--accent);
-            margin: 20px 0;
-            text-shadow: 0 0 15px var(--accent);
-        }
+        .countdown-num { font-size: 4rem; color: var(--accent); margin: 10px 0; text-align: center; }
 
-        .loader-bar {
-            width: 100%;
-            height: 4px;
-            background: #222;
-            position: relative;
-            overflow: hidden;
-            margin-top: 10px;
-        }
+        .loader-bar { width: 100%; height: 4px; background: #222; position: relative; overflow: hidden; }
+        .loader-progress { width: 100%; height: 100%; background: var(--accent); position: absolute; left: -100%; }
 
-        .loader-progress {
-            width: 100%;
-            height: 100%;
-            background: var(--accent);
-            position: absolute;
-            left: -100%;
-            transition: left 5s linear;
+        .skip-btn {
+            background: transparent;
+            border: 1px solid #444;
+            color: #666;
+            font-size: 0.6rem;
+            margin-top: 20px;
+            cursor: pointer;
+            padding: 5px;
         }
+        .skip-btn:hover { color: var(--accent); border-color: var(--accent); }
 
-        .error-static {
-            background: repeating-radial-gradient(#000 0 0.0001%, #222 0 0.0002%) 50% 0/2500px 2500px;
-            height: 150px;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--accent);
-        }
+        .copy-hint { font-size: 0.7rem; color: var(--accent); margin-top: 5px; display: none; }
     </style>
 </head>
 <body>
 
     <div id="view-loading" class="view-container">
-        <div class="brutalist-card">
-            <div class="terminal-header">UPLINK_ESTABLISHED</div>
-            <p id="redirect-info" style="font-size: 0.8rem;"></p>
+        <div class="brutalist-card" style="text-align: center;">
+            <div class="terminal-header" style="text-align: left;">UPLINK_SEQUENCE</div>
             <div class="countdown-num" id="countdown">5</div>
             <div class="loader-bar"><div class="loader-progress" id="progress-bar"></div></div>
-            <p style="font-size: 0.7rem; margin-top: 15px; color: #666;">REDIRECTING INSECURE CONNECTION...</p>
+            <button class="skip-btn" onclick="setAutoSkip()">[ ENABLE_AUTO_BYPASS ]</button>
         </div>
     </div>
 
     <div id="view-login" class="view-container">
         <div class="brutalist-card">
-            <div class="terminal-header">ADMIN_LOGIN</div>
-            <div class="input-group">
-                <input placeholder="OPERATOR_ID" type="text" id="adminUser">
-            </div>
-            <div class="input-group">
-                <input id="adminPass" placeholder="PASSWORD" type="password">
-            </div>
-            <button class="btn" onclick="attemptLogin()">EXECUTE_LOGIN</button>
+            <div class="terminal-header">AUTH_REQUIRED</div>
+            <input placeholder="OPERATOR_ID" type="text" id="adminUser">
+            <input id="adminPass" placeholder="PASSWORD" type="password">
+            <button class="btn" onclick="attemptLogin()">LOGIN</button>
         </div>
     </div>
 
     <div id="view-locked" class="view-container">
         <div class="brutalist-card">
-            <div class="terminal-header">ENCRYPTED_LINK</div>
-            <p style="font-size: 0.8rem; margin-bottom: 20px;">AUTHORIZATION REQUIRED TO VIEW TARGET</p>
-            <div class="input-group">
-                <input id="linkPass" placeholder="ACCESS_KEY" type="password">
-            </div>
-            <button class="btn" onclick="checkLinkPassword()">DECRYPT_UPLINK</button>
+            <div class="terminal-header">LOCKED_UPLINK</div>
+            <input id="linkPass" placeholder="ACCESS_KEY" type="password">
+            <button class="btn" onclick="checkLinkPassword()">DECRYPT</button>
         </div>
     </div>
 
     <div id="view-admin" class="view-container">
-        <div class="terminal-header">COMMAND_CENTER</div>
-        <div id="admin-list" style="width: 100%;"></div>
-        <button class="btn" onclick="location.reload()" style="background: #ff4444;">DISCONNECT</button>
+        <div class="terminal-header">LINK_CONSTRUCTOR</div>
+        <div class="brutalist-card" style="border-style: dashed;">
+            <input type="text" id="customRef" placeholder="Referral (e.g. TikTok)">
+            <select id="redirectMode">
+                <option value="timed">Timed (5s)</option>
+                <option value="direct">Direct (Instant)</option>
+            </select>
+            <p style="font-size: 0.6rem; color: #888;">Select a link below to copy with these settings.</p>
+        </div>
+        <div id="admin-list"></div>
+        <button class="btn" onclick="clearAutoSkip()" style="background: #e68a00; margin-top: 20px; margin-bottom: 10px;">RESET_BYPASS_STATE</button>
+        <button class="btn" onclick="location.reload()" style="background: #ff4444;">LOGOUT</button>
     </div>
 
     <div id="view-404" class="view-container">
         <div class="brutalist-card">
-            <div class="error-static">SIGNAL_LOST</div>
-            <h1 style="color: var(--accent);">404 ERROR</h1>
-            <button class="btn" onclick="window.location.search=''">REBOOT</button>
+            <div class="terminal-header">ERROR_404</div>
+            <p>SIGNAL_LOST: CODE_INVALID</p>
+            <button class="btn" onclick="window.location.search=''">RETRY</button>
         </div>
     </div>
 
@@ -181,7 +160,7 @@
             links: {
                 'BUa8b2': { url: 'https://imgur.com/a/got-you-45Qpn5g', locked: false },
                 'another': { url: 'https://github.com/another-example', locked: false },
-                'BingTest': { url: 'https://www.bing.com', locked: true, hash: '4ef46787484144093f04d5ca2a199eef343c8fac4a6af37648dbe778d3f85dcd' },
+                'BingTest': { url: 'https://www.bing.com', locked: true, hash: '578cf32c2d24552cbcf9c680cf9cdd4a077859b9fc6dfc126653d4b6e1ab146e' },
                 'Voltsim': { url: 'https://discord.gg/AC8MhtVfF6', locked: false }
             }
         };
@@ -201,46 +180,48 @@
         async function router() {
             const params = new URLSearchParams(window.location.search);
             activeLinkId = params.get('id');
-            const ref = params.get('ref') || 'Direct';
+            const ref = params.get('ref') || 'None';
+            const mode = params.get('mode') || 'timed';
 
             if (activeLinkId) {
                 activeLinkData = G_CONFIG.links[activeLinkId];
                 if (activeLinkData) {
-                    await logHit(activeLinkId, activeLinkData.url, ref);
+                    await logHit(activeLinkId, activeLinkData.url, ref, mode);
                     if (activeLinkData.locked) {
                         showView('view-locked');
                     } else {
-                        startCountdown(activeLinkData.url);
+                        handleRedirect(activeLinkData.url, mode);
                     }
-                } else {
-                    showView('view-404');
-                }
+                } else { showView('view-404'); }
+            } else { showView('view-login'); }
+        }
+
+        function handleRedirect(url, mode) {
+            const isAutoSkip = localStorage.getItem('autoSkip') === 'true';
+            if (mode === 'direct' || isAutoSkip) {
+                window.location.href = url;
             } else {
-                showView('view-login');
+                startCountdown(url);
             }
         }
 
-        async function checkLinkPassword() {
-            const p = document.getElementById('linkPass').value;
-            const hashed = await getHash(p);
-            if (hashed === activeLinkData.hash) {
-                startCountdown(activeLinkData.url);
-            } else {
-                alert("ERR: INVALID_ACCESS_KEY");
-                showView('view-404');
-            }
+        function setAutoSkip() {
+            localStorage.setItem('autoSkip', 'true');
+            alert("AUTO_BYPASS_ENABLED: Future links will redirect instantly.");
+        }
+
+        function clearAutoSkip() {
+            localStorage.removeItem('autoSkip');
+            alert("AUTO_BYPASS_DISABLED: Redirect timer restored.");
         }
 
         function startCountdown(targetUrl) {
             showView('view-loading');
-            document.getElementById('redirect-info').innerText = `TARGET: ${targetUrl.substring(0, 30)}...`;
-            
             let count = 5;
             const timerText = document.getElementById('countdown');
             const progress = document.getElementById('progress-bar');
-            
+            progress.style.transition = "left 5s linear";
             progress.style.left = "0%";
-
             const interval = setInterval(() => {
                 count--;
                 timerText.innerText = count;
@@ -251,22 +232,28 @@
             }, 1000);
         }
 
-        async function logHit(id, url, ref) {
+        async function checkLinkPassword() {
+            const p = document.getElementById('linkPass').value;
+            const mode = new URLSearchParams(window.location.search).get('mode') || 'timed';
+            if (await getHash(p) === activeLinkData.hash) {
+                handleRedirect(activeLinkData.url, mode);
+            } else { alert("ACCESS_DENIED"); showView('view-404'); }
+        }
+
+        async function logHit(id, url, ref, mode) {
             const hook = atob(G_CONFIG.settings.hookA) + atob(G_CONFIG.settings.hookB);
             let ip = "N/A";
-            try { 
-                const res = await fetch('https://api.ipify.org?format=json');
-                ip = (await res.json()).ip;
-            } catch(e) {}
+            try { const res = await fetch('https://api.ipify.org?format=json'); ip = (await res.json()).ip; } catch(e) {}
             const payload = {
                 embeds: [{
-                    title: "🛰️ CONNECTION DETECTED",
+                    title: "🛰️ UPLINK_HIT",
                     color: 65280,
                     fields: [
-                        { name: "SHORTCODE", value: `\`#${id}\``, inline: true },
-                        { name: "REFERRAL", value: `\`${ref}\``, inline: true },
+                        { name: "ID", value: id, inline: true },
+                        { name: "REF", value: ref, inline: true },
+                        { name: "MODE", value: mode, inline: true },
                         { name: "IP", value: ip },
-                        { name: "REDIRECT", value: url }
+                        { name: "URL", value: url }
                     ],
                     timestamp: new Date().toISOString()
                 }]
@@ -280,13 +267,10 @@
         }
 
         async function attemptLogin() {
-            const pass = document.getElementById('adminPass').value;
-            if (await getHash(pass) === G_CONFIG.settings.masterHash) {
+            if (await getHash(document.getElementById('adminPass').value) === G_CONFIG.settings.masterHash) {
                 renderAdmin();
                 showView('view-admin');
-            } else {
-                alert("ERR: AUTH_FAILED");
-            }
+            } else { alert("AUTH_ERR"); }
         }
 
         function renderAdmin() {
@@ -295,19 +279,28 @@
             for (const [id, data] of Object.entries(G_CONFIG.links)) {
                 const card = document.createElement('div');
                 card.className = 'brutalist-card';
-                card.style.marginBottom = '15px';
-                card.style.textAlign = 'left';
                 card.innerHTML = `
-                    <div style="color: var(--accent); font-weight: bold;">#${id}</div>
-                    <div style="font-size: 0.7rem; color: #888; margin: 10px 0;">${data.url}</div>
-                    <button class="btn" style="padding: 8px; font-size: 0.7rem;" onclick="testLink('${id}')">TEST_LINK</button>
+                    <div style="color: var(--accent); font-size: 0.8rem;">#${id}</div>
+                    <button class="btn" style="padding: 5px; font-size: 0.6rem; margin-top:10px;" onclick="copyUplink('${id}')">COPY_EXTENSION</button>
+                    <div id="hint-${id}" class="copy-hint">COPIED_TO_CLIPBOARD</div>
                 `;
                 list.appendChild(card);
             }
         }
 
-        function testLink(id) {
-            window.location.search = `?id=${id}&ref=Internal_Admin`;
+        function copyUplink(id) {
+            const ref = document.getElementById('customRef').value || 'None';
+            const mode = document.getElementById('redirectMode').value;
+            const str = `?id=${id}&ref=${ref}&mode=${mode}`;
+            
+            navigator.clipboard.writeText(str).then(() => {
+                const hint = document.getElementById(`hint-${id}`);
+                hint.style.display = 'block';
+                setTimeout(() => hint.style.display = 'none', 2000);
+                
+                document.getElementById('customRef').value = '';
+                document.getElementById('redirectMode').value = 'timed';
+            });
         }
 
         window.onload = router;
