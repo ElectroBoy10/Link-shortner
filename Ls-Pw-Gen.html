@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uplink Workshop v2</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --card-bg: #111111;
+            --accent: #00ff41;
+            --border: #333;
+            --text: #e0e0e0;
+        }
+
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            font-family: 'Courier New', Courier, monospace; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+
+        .view-container { 
+            width: 100%; 
+            max-width: 450px; 
+            padding: 20px; 
+            flex-direction: column; 
+        }
+
+        .brutalist-card { 
+            border: 2px solid var(--accent); 
+            background-color: var(--card-bg); 
+            padding: 1.5rem; 
+            box-shadow: 6px 6px 0px rgba(0, 255, 65, 0.2); 
+            box-sizing: border-box; 
+            margin-bottom: 25px;
+        }
+
+        .terminal-header { 
+            border-bottom: 2px solid var(--accent); 
+            margin-bottom: 15px; 
+            padding-bottom: 8px; 
+            font-weight: bold; 
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        input { 
+            width: 100%; 
+            background: #000; 
+            border: 1px solid var(--border); 
+            color: var(--accent); 
+            padding: 12px; 
+            box-sizing: border-box; 
+            outline: none;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+
+        .btn { 
+            width: 100%; 
+            padding: 12px; 
+            background: var(--accent); 
+            color: #000; 
+            border: none; 
+            font-weight: bold; 
+            cursor: pointer; 
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .btn:hover { background: #fff; }
+
+        .result-box {
+            margin-top: 15px;
+            background: #000;
+            border: 1px dashed var(--accent);
+            padding: 10px;
+            word-break: break-all;
+            font-size: 0.75rem;
+            color: var(--accent);
+            display: none;
+            white-space: pre-wrap;
+        }
+
+        .label {
+            font-size: 0.65rem;
+            color: #888;
+            margin-bottom: 5px;
+            display: block;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="view-container">
+        
+        <div class="brutalist-card">
+            <div class="terminal-header">HASH_CONVERTER</div>
+            <span class="label">SALT_CONFIG:</span>
+            <input type="text" id="saltInput" value="my_secret_salt_123">
+            <span class="label">INPUT_PASSWORD:</span>
+            <input type="text" id="passInput" placeholder="Enter password...">
+            <button class="btn" onclick="generateHash()">GENERATE_SHA256</button>
+            <div id="hashArea" class="result-box"></div>
+        </div>
+
+        <div class="brutalist-card">
+            <div class="terminal-header">WEBHOOK_OBFUSCATOR</div>
+            <span class="label">FULL_DISCORD_URL:</span>
+            <input type="text" id="webhookInput" placeholder="https://discord.com/api/webhooks/...">
+            <button class="btn" onclick="obfuscateWebhook()">SPLIT_AND_ENCODE</button>
+            <div id="webArea" class="result-box"></div>
+        </div>
+
+        <p style="font-size: 0.6rem; color: #444; text-align: center; text-transform: uppercase;">
+            Industrial Encryption Protocol Active
+        </p>
+    </div>
+
+    <script>
+        async function generateHash() {
+            const p = document.getElementById('passInput').value;
+            const s = document.getElementById('saltInput').value;
+            if(!p) return;
+
+            const step1 = btoa(p + s);
+            const step2 = btoa(step1);
+            const msgBuffer = new TextEncoder().encode(step2);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+            const area = document.getElementById('hashArea');
+            area.innerText = hash;
+            area.style.display = 'block';
+        }
+
+        function obfuscateWebhook() {
+            const url = document.getElementById('webhookInput').value;
+            if(!url) return;
+
+            const mid = Math.floor(url.length / 2);
+            const a = btoa(url.substring(0, mid));
+            const b = btoa(url.substring(mid));
+
+            const area = document.getElementById('webArea');
+            area.innerText = `partA: "${a}",\npartB: "${b}"`;
+            area.style.display = 'block';
+        }
+    </script>
+</body>
+  </html>
+  
