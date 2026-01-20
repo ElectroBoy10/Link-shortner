@@ -1,252 +1,316 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Link Shortener</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background-color: #1a1a1a;
-      color: #e0e0e0;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      text-align: center;
-    }
-    .container {
-      max-width: 90%;
-      width: 100%;
-      padding: 20px;
-      background-color: #262626;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-      margin-top: 50px;
-    }
-    h1, h2 {
-      color: #ffffff;
-      font-weight: 300;
-    }
-    p, code {
-      color: #b3b3b3;
-    }
-    .link-list {
-      list-style-type: none;
-      padding: 0;
-      width: 100%;
-      text-align: left;
-    }
-    .link-list li {
-      background-color: #333;
-      margin: 10px 0;
-      padding: 15px;
-      border-radius: 6px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-      overflow-wrap: break-word;
-    }
-    .error {
-      color: #e06c75;
-    }
-    .password-input {
-      margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-    }
-    .password-input input {
-      padding: 12px;
-      width: 80%;
-      margin-bottom: 10px;
-      border: 1px solid #444;
-      border-radius: 4px;
-      background-color: #383838;
-      color: #e0e0e0;
-      font-size: 1rem;
-    }
-    .password-input button {
-      padding: 12px 20px;
-      width: 80%;
-      border: none;
-      border-radius: 4px;
-      background-color: #5d5d5d;
-      color: #ffffff;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background-color 0.2s;
-    }
-    .password-input button:hover {
-      background-color: #7a7a7a;
-    }
-    #redirect-section h1 {
-      color: #98c379;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uplink Terminal</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --card-bg: #111111;
+            --accent: #00ff41;
+            --border: #333;
+            --text: #e0e0e0;
+        }
+
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            font-family: 'Courier New', Courier, monospace; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+
+        .view-container { 
+            display: none; 
+            width: 100%; 
+            max-width: 450px; 
+            padding: 20px; 
+            flex-direction: column; 
+            animation: fadeIn 0.3s ease-out; 
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .brutalist-card { 
+            border: 2px solid var(--accent); 
+            background-color: var(--card-bg); 
+            padding: 2rem; 
+            box-shadow: 8px 8px 0px rgba(0, 255, 65, 0.2); 
+            box-sizing: border-box; 
+            text-align: center;
+        }
+
+        .terminal-header { 
+            border-bottom: 2px solid var(--accent); 
+            margin-bottom: 20px; 
+            padding-bottom: 10px; 
+            font-weight: bold; 
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-align: left;
+        }
+
+        .input-group { margin-bottom: 15px; width: 100%; }
+
+        input { 
+            width: 100%; 
+            background: #000; 
+            border: 1px solid var(--border); 
+            color: var(--accent); 
+            padding: 12px; 
+            box-sizing: border-box; 
+            outline: none;
+            font-family: 'Courier New', monospace;
+        }
+
+        input:focus { border-color: var(--accent); }
+
+        .btn { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--accent); 
+            color: #000; 
+            border: none; 
+            font-weight: bold; 
+            cursor: pointer; 
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+
+        .btn:hover { background: #00cc33; transform: translate(-2px, -2px); box-shadow: 4px 4px 0 #fff; }
+
+        .countdown-num {
+            font-size: 5rem;
+            color: var(--accent);
+            margin: 20px 0;
+            text-shadow: 0 0 15px var(--accent);
+        }
+
+        .loader-bar {
+            width: 100%;
+            height: 4px;
+            background: #222;
+            position: relative;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .loader-progress {
+            width: 100%;
+            height: 100%;
+            background: var(--accent);
+            position: absolute;
+            left: -100%;
+            transition: left 5s linear;
+        }
+
+        .error-static {
+            background: repeating-radial-gradient(#000 0 0.0001%, #222 0 0.0002%) 50% 0/2500px 2500px;
+            height: 150px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--accent);
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div id="redirect-section" style="display:none;">
-      <h1>Redirecting...</h1>
+
+    <div id="view-loading" class="view-container">
+        <div class="brutalist-card">
+            <div class="terminal-header">UPLINK_ESTABLISHED</div>
+            <p id="redirect-info" style="font-size: 0.8rem;"></p>
+            <div class="countdown-num" id="countdown">5</div>
+            <div class="loader-bar"><div class="loader-progress" id="progress-bar"></div></div>
+            <p style="font-size: 0.7rem; margin-top: 15px; color: #666;">REDIRECTING INSECURE CONNECTION...</p>
+        </div>
     </div>
 
-    <div id="info-section">
-      <h1>Welcome to the Link Shortener</h1>
-      <p>Use <code>your-domain.com/#shortcode</code> to visit a link.</p>
-      <p>To view all available links, enter the password below.</p>
-      <div class="password-input">
-        <input type="password" id="passwordField" placeholder="Enter password">
-        <button onclick="checkPassword()">View Links</button>
-      </div>
+    <div id="view-login" class="view-container">
+        <div class="brutalist-card">
+            <div class="terminal-header">ADMIN_LOGIN</div>
+            <div class="input-group">
+                <input placeholder="OPERATOR_ID" type="text" id="adminUser">
+            </div>
+            <div class="input-group">
+                <input id="adminPass" placeholder="PASSWORD" type="password">
+            </div>
+            <button class="btn" onclick="attemptLogin()">EXECUTE_LOGIN</button>
+        </div>
     </div>
 
-    <div id="link-list-section" style="display:none;">
-      <h2>Available Links</h2>
-      <ul id="linkList" class="link-list"></ul>
+    <div id="view-locked" class="view-container">
+        <div class="brutalist-card">
+            <div class="terminal-header">ENCRYPTED_LINK</div>
+            <p style="font-size: 0.8rem; margin-bottom: 20px;">AUTHORIZATION REQUIRED TO VIEW TARGET</p>
+            <div class="input-group">
+                <input id="linkPass" placeholder="ACCESS_KEY" type="password">
+            </div>
+            <button class="btn" onclick="checkLinkPassword()">DECRYPT_UPLINK</button>
+        </div>
     </div>
 
-    <div id="invalid-section" style="display:none;">
-      <h1 class="error">Invalid Link</h1>
-      <p>The shortcode you entered does not match any available links. Please check the URL and try again.</p>
+    <div id="view-admin" class="view-container">
+        <div class="terminal-header">COMMAND_CENTER</div>
+        <div id="admin-list" style="width: 100%;"></div>
+        <button class="btn" onclick="location.reload()" style="background: #ff4444;">DISCONNECT</button>
     </div>
-  </div>
 
-  <script src="config.js"></script>
-  <script>
-    // === SETTINGS ===
-    const webhookUrl = "https://discord.com/api/webhooks/1410475056684990635/Jp1LxPre_FTyLQO_VqMkJbDl9qkqutYT-fa49OQQ-ys5wcVHFnYlHGkuPwA0Hf65Dzoz";
-    const storedHash = "635ca0b0ec366304d24b6d3d3e28cd7fcb2bfe3e5665594c0a6a581d77c03c83";
+    <div id="view-404" class="view-container">
+        <div class="brutalist-card">
+            <div class="error-static">SIGNAL_LOST</div>
+            <h1 style="color: var(--accent);">404 ERROR</h1>
+            <button class="btn" onclick="window.location.search=''">REBOOT</button>
+        </div>
+    </div>
 
-    // === HELPERS ===
-    async function sha256(message) {
-      const msgBuffer = new TextEncoder().encode(message);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    async function verifyPassword(password) {
-      try {
-        const base64Password = btoa(password);
-        const hash = await sha256(base64Password);
-        return hash === storedHash;
-      } catch (err) {
-        console.error("Password verification error:", err);
-        return false;
-      }
-    }
-
-    // === CORE ===
-    async function handleRedirect() {
-      try {
-        const shortcode = window.location.hash.substring(1);
-        const linkData = config[shortcode];
-        const redirectSection = document.getElementById('redirect-section');
-        const infoSection = document.getElementById('info-section');
-        const invalidSection = document.getElementById('invalid-section');
-
-        document.querySelectorAll('#redirect-section, #invalid-section')
-          .forEach(el => el.style.display = 'none');
-
-        if (!shortcode) {
-          infoSection.style.display = 'block';
-          return;
-        }
-
-        infoSection.style.display = 'none';
-
-        if (!linkData) {
-          invalidSection.style.display = 'block';
-          console.warn("Invalid shortcode:", shortcode);
-          return;
-        }
-
-        if (linkData.locked === 1) {
-          const userPass = prompt("This link is locked. Please enter the password:");
-          if (!userPass) return;
-
-          const valid = await verifyPassword(userPass);
-          if (valid && userPass === linkData.password) {
-            redirectSection.style.display = 'block';
-            sendWebhook(shortcode, linkData.url);
-            setTimeout(() => window.location.href = linkData.url, 1000);
-          } else {
-            alert("Incorrect password.");
-            invalidSection.style.display = 'block';
-          }
-        } else {
-          redirectSection.style.display = 'block';
-          sendWebhook(shortcode, linkData.url);
-          setTimeout(() => window.location.href = linkData.url, 1000);
-        }
-      } catch (error) {
-        console.error("Unexpected error in handleRedirect:", error);
-        alert("An unexpected error occurred. Please try again later.");
-      }
-    }
-
-    async function checkPassword() {
-      try {
-        const password = document.getElementById('passwordField').value;
-        const valid = await verifyPassword(password);
-
-        if (valid) {
-          document.getElementById('info-section').style.display = 'none';
-          document.getElementById('link-list-section').style.display = 'block';
-          const linkList = document.getElementById('linkList');
-          linkList.innerHTML = '';
-
-          for (const shortcode in config) {
-            const item = document.createElement('li');
-            item.textContent = `#${shortcode} → ${config[shortcode].url}` + (config[shortcode].locked === 1 ? " [Locked]" : "");
-            linkList.appendChild(item);
-          }
-        } else {
-          alert("Invalid password.");
-        }
-      } catch (error) {
-        console.error("Error in checkPassword:", error);
-        alert("An unexpected error occurred while checking password.");
-      }
-    }
-
-    async function sendWebhook(shortcode, redirectUrl) {
-      try {
-        let ipInfo = 'Unavailable';
-        try {
-          const res = await fetch('https://api.ipify.org?format=json');
-          if (res.ok) {
-            const data = await res.json();
-            ipInfo = data.ip;
-          }
-        } catch (e) {
-          console.warn("Failed to fetch IP:", e);
-        }
-
-        const payload = {
-          content: `Shortcode: #${shortcode}\nRedirect: ${redirectUrl}\nIP: ${ipInfo}`
+    <script>
+        //----------------------------------------------------------------------
+        const G_CONFIG = {
+            settings: {
+                salt: "my_secret_salt_123",
+                masterHash: "dc02833e8dba6d393d3f38f678612bbd688aacd85a98afbc95481c352dfefe02",
+                hookA: "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQxMDQ3NTA1NjY4NDk5MDYzNS9KcDFMeFBy", 
+                hookB: "ZV9GVHlMUU9fVnFNa0piRGw5cWtxdXRZVC1mYTQ5T1FRLXlzNXdjVkhGbllsSEdrdVB3QTBIZjY1RHpveg=="
+            },
+            links: {
+                'BUa8b2': { url: 'https://imgur.com/a/got-you-45Qpn5g', locked: false },
+                'another': { url: 'https://github.com/another-example', locked: false },
+                'BingTest': { url: 'https://www.bing.com', locked: true, hash: '578cf32c2d24552cbcf9c680cf9cdd4a077859b9fc6dfc126653d4b6e1ab146e' },
+                'Voltsim': { url: 'https://discord.gg/AC8MhtVfF6', locked: false }
+            }
         };
+        //----------------------------------------------------------------------
 
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        let activeLinkId = null;
+        let activeLinkData = null;
 
-        if (!response.ok) {
-          console.error("Webhook failed:", response.status, response.statusText);
+        async function getHash(input) {
+            const step1 = btoa(input + G_CONFIG.settings.salt);
+            const step2 = btoa(step1);
+            const msgBuffer = new TextEncoder().encode(step2);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
-      } catch (error) {
-        console.error("Error sending webhook:", error);
-      }
-    }
 
-    document.addEventListener('DOMContentLoaded', handleRedirect);
-    window.addEventListener('hashchange', handleRedirect);
-  </script>
+        async function router() {
+            const params = new URLSearchParams(window.location.search);
+            activeLinkId = params.get('id');
+            const ref = params.get('ref') || 'Direct';
+
+            if (activeLinkId) {
+                activeLinkData = G_CONFIG.links[activeLinkId];
+                if (activeLinkData) {
+                    await logHit(activeLinkId, activeLinkData.url, ref);
+                    if (activeLinkData.locked) {
+                        showView('view-locked');
+                    } else {
+                        startCountdown(activeLinkData.url);
+                    }
+                } else {
+                    showView('view-404');
+                }
+            } else {
+                showView('view-login');
+            }
+        }
+
+        async function checkLinkPassword() {
+            const p = document.getElementById('linkPass').value;
+            const hashed = await getHash(p);
+            if (hashed === activeLinkData.hash) {
+                startCountdown(activeLinkData.url);
+            } else {
+                alert("ERR: INVALID_ACCESS_KEY");
+                showView('view-404');
+            }
+        }
+
+        function startCountdown(targetUrl) {
+            showView('view-loading');
+            document.getElementById('redirect-info').innerText = `TARGET: ${targetUrl.substring(0, 30)}...`;
+            
+            let count = 5;
+            const timerText = document.getElementById('countdown');
+            const progress = document.getElementById('progress-bar');
+            
+            progress.style.left = "0%";
+
+            const interval = setInterval(() => {
+                count--;
+                timerText.innerText = count;
+                if (count <= 0) {
+                    clearInterval(interval);
+                    window.location.href = targetUrl;
+                }
+            }, 1000);
+        }
+
+        async function logHit(id, url, ref) {
+            const hook = atob(G_CONFIG.settings.hookA) + atob(G_CONFIG.settings.hookB);
+            let ip = "N/A";
+            try { 
+                const res = await fetch('https://api.ipify.org?format=json');
+                ip = (await res.json()).ip;
+            } catch(e) {}
+            const payload = {
+                embeds: [{
+                    title: "🛰️ CONNECTION DETECTED",
+                    color: 65280,
+                    fields: [
+                        { name: "SHORTCODE", value: `\`#${id}\``, inline: true },
+                        { name: "REFERRAL", value: `\`${ref}\``, inline: true },
+                        { name: "IP", value: ip },
+                        { name: "REDIRECT", value: url }
+                    ],
+                    timestamp: new Date().toISOString()
+                }]
+            };
+            fetch(hook, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
+        }
+
+        function showView(id) {
+            document.querySelectorAll('.view-container').forEach(v => v.style.display = 'none');
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        async function attemptLogin() {
+            const pass = document.getElementById('adminPass').value;
+            if (await getHash(pass) === G_CONFIG.settings.masterHash) {
+                renderAdmin();
+                showView('view-admin');
+            } else {
+                alert("ERR: AUTH_FAILED");
+            }
+        }
+
+        function renderAdmin() {
+            const list = document.getElementById('admin-list');
+            list.innerHTML = '';
+            for (const [id, data] of Object.entries(G_CONFIG.links)) {
+                const card = document.createElement('div');
+                card.className = 'brutalist-card';
+                card.style.marginBottom = '15px';
+                card.style.textAlign = 'left';
+                card.innerHTML = `
+                    <div style="color: var(--accent); font-weight: bold;">#${id}</div>
+                    <div style="font-size: 0.7rem; color: #888; margin: 10px 0;">${data.url}</div>
+                    <button class="btn" style="padding: 8px; font-size: 0.7rem;" onclick="testLink('${id}')">TEST_LINK</button>
+                `;
+                list.appendChild(card);
+            }
+        }
+
+        function testLink(id) {
+            window.location.search = `?id=${id}&ref=Internal_Admin`;
+        }
+
+        window.onload = router;
+    </script>
 </body>
-  </html>
-  
+</html>
