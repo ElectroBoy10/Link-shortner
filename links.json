@@ -1,7 +1,8 @@
 {
   "settings": {
     "salts": [
-      "my_secret_salt_123"
+      "my_secret_salt_123",
+      "Saltastic"
     ],
     "masterHash": "dc02833e8dba6d393d3f38f678612bbd688aacd85a98afbc95481c352dfefe02",
     "hookA": "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQxMDQ3NTA1NjY4NDk5MDYzNS9KcDFMeFBy",
@@ -30,34 +31,13 @@
       "message": "Establishing Discord relay...",
       "oneTime": false
     },
-    "PwTest": {
+    "Pwtest": {
       "url": "https://dummyimage.com/600x400/000/fff.png&text=Pw+Test",
       "locked": true,
-      "hash": "74a7b26e07efe4547ffa4bc907df05d141cc6e4e5671c51afea958eda3b13ad9",
+      "hash": "efe61162a78422d2f92be5552a873a65e88de423b21b1c2b43e6941fd1677a71",
       "expires": null,
-      "message": "Decrypting secure channel...",
+      "message": "Redirect to server",
       "oneTime": false
-    },
-    "TEST_basic": {
-      "url": "https://example.com",
-      "locked": false,
-      "expires": null,
-      "message": "Routing to test destination...",
-      "oneTime": false
-    },
-    "TEST_expiry": {
-      "url": "https://example.com/expired-test",
-      "locked": false,
-      "expires": "2024-01-01",
-      "message": null,
-      "oneTime": false
-    },
-    "TEST_onetime": {
-      "url": "https://example.com/one-time-test",
-      "locked": false,
-      "expires": null,
-      "message": "Single-use link activating...",
-      "oneTime": true
     }
   }
 }
