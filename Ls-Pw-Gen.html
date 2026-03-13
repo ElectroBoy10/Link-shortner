@@ -3,156 +3,1434 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uplink Workshop v2</title>
+    <title>Uplink Workshop v4</title>
+    <!--
+        uplink management tool — loads from links.json, edits in memory,
+        exports full json to copy/paste back.
+        backups live in localStorage. yes, all of it. no server. we know.
+    -->
     <style>
         :root {
-            --bg: #0a0a0a;
-            --card-bg: #111111;
-            --accent: #00ff41;
-            --border: #333;
-            --text: #e0e0e0;
+            --bg:       #0a0a0a;
+            --card-bg:  #111111;
+            --accent:   #00ff41;
+            --accent-d: #00aa2a;
+            --accent-g: rgba(0,255,65,0.1);
+            --border:   #333;
+            --text:     #e0e0e0;
+            --muted:    #666;
+            --amber:    #e68a00;
+            --red:      #ff4444;
+            --purple:   #b070ff;
+            --blue:     #5096ff;
         }
 
-        body { 
-            background-color: var(--bg); 
-            color: var(--text); 
-            font-family: 'Courier New', Courier, monospace; 
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
         }
 
-        .view-container { 
-            width: 100%; 
-            max-width: 450px; 
-            padding: 20px; 
-            flex-direction: column; 
+        /* ── Top bar ───────────────────────────────────────────────── */
+        .topbar {
+            background: #0d0d0d;
+            border-bottom: 1px solid var(--border);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .brutalist-card { 
-            border: 2px solid var(--accent); 
-            background-color: var(--card-bg); 
-            padding: 1.5rem; 
-            box-shadow: 6px 6px 0px rgba(0, 255, 65, 0.2); 
-            box-sizing: border-box; 
-            margin-bottom: 25px;
-        }
-
-        .terminal-header { 
-            border-bottom: 2px solid var(--accent); 
-            margin-bottom: 15px; 
-            padding-bottom: 8px; 
-            font-weight: bold; 
+        .topbar-title {
             color: var(--accent);
+            font-size: 0.85rem;
+            letter-spacing: 2px;
             text-transform: uppercase;
         }
 
-        input { 
-            width: 100%; 
-            background: #000; 
-            border: 1px solid var(--border); 
-            color: var(--accent); 
-            padding: 12px; 
-            box-sizing: border-box; 
-            outline: none;
+        .topbar-status {
+            font-size: 0.6rem;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        .topbar-status .dot-live  { color: var(--accent); }
+        .topbar-status .dot-dirty { color: var(--amber); }
+        .topbar-status .dot-error { color: var(--red); }
+
+        /* ── Tab bar ───────────────────────────────────────────────── */
+        .tabbar {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: #0d0d0d;
+            padding: 0 8px;
+            gap: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .tabbar::-webkit-scrollbar { display: none; }
+
+        .tab {
+            padding: 14px 16px;
+            min-height: 48px;
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: color 0.15s, border-color 0.15s;
+            user-select: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+        }
+
+        .tab:hover { color: var(--text); }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        /* ── Tab panels ────────────────────────────────────────────── */
+        .panel { display: none; padding: 12px; max-width: 700px; margin: 0 auto; width: 100%; }
+
+        @media (min-width: 520px) {
+            .panel { padding: 20px; }
+        }
+        .panel.active { display: block; }
+
+        /* ── Cards ─────────────────────────────────────────────────── */
+        .card {
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+
+        .card.accent   { border-color: var(--accent-d); }
+        .card.amber    { border-color: rgba(230,138,0,0.4); }
+        .card.red      { border-color: rgba(255,68,68,0.4); }
+        .card.purple   { border-color: rgba(160,80,255,0.4); }
+
+        .card-header {
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .card-header.amber  { color: var(--amber); border-color: rgba(230,138,0,0.3); }
+        .card-header.purple { color: var(--purple); border-color: rgba(160,80,255,0.3); }
+
+        /* ── Form elements ─────────────────────────────────────────── */
+        label.field-label {
+            display: block;
+            font-size: 0.6rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="date"],
+        input[type="url"],
+        select,
+        textarea {
+            width: 100%;
+            background: #000;
+            border: 1px solid var(--border);
+            color: var(--accent);
+            padding: 12px 10px;
             font-family: 'Courier New', monospace;
+            /* 16px prevents iOS auto-zoom on tap */
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.15s;
+            margin-bottom: 10px;
+            border-radius: 0;
+            -webkit-appearance: none;
+        }
+
+        input:focus, select:focus, textarea:focus { border-color: var(--accent-d); }
+
+        input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            accent-color: var(--accent);
+        }
+
+        textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+        /* ── Buttons ───────────────────────────────────────────────── */
+        .btn {
+            padding: 12px 14px;
+            min-height: 44px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: none;
+            transition: background 0.15s, color 0.15s;
+            letter-spacing: 1px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-primary { background: var(--accent);  color: #000; }
+        .btn-primary:hover { background: #fff; }
+
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+        .btn-amber { background: var(--amber); color: #000; }
+        .btn-amber:hover { background: #ffcc44; }
+
+        .btn-red { background: var(--red); color: #fff; }
+        .btn-red:hover { background: #ff7777; }
+
+        .btn-purple { background: var(--purple); color: #000; }
+        .btn-purple:hover { background: #cc99ff; }
+
+        .btn-sm { padding: 10px 12px; min-height: 44px; font-size: 0.7rem; display: inline-flex; align-items: center; touch-action: manipulation; }
+
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .btn-row .btn { flex: 1; min-width: 120px; justify-content: center; }
+
+        /* ── Link cards in manager ─────────────────────────────────── */
+        .link-row {
+            border: 1px solid var(--border);
+            background: #0d0d0d;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            transition: border-color 0.15s;
+        }
+
+        /* On narrow screens, stack the order buttons, info, and actions vertically */
+        @media (max-width: 500px) {
+            .link-row { flex-wrap: wrap; }
+            .link-row-order { flex-direction: row; order: 2; width: 100%; justify-content: flex-start; }
+            .link-row-info  { order: 1; width: calc(100% - 60px); }
+            .link-row-actions { order: 0; flex-direction: row; flex-wrap: wrap; gap: 4px; flex-shrink: 0; }
+        }
+
+        .link-row:hover { border-color: var(--accent-d); }
+        .link-row.editing { border-color: var(--accent); background: #0d1a0d; }
+
+        .link-row-order {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex-shrink: 0;
+        }
+
+        .order-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.7rem;
+            padding: 10px 12px;
+            min-height: 40px;
+            min-width: 40px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.1s;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .order-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .link-row-info { flex: 1; min-width: 0; }
+
+        .link-row-code {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 2px;
+        }
+
+        .link-row-url {
+            font-size: 0.65rem;
+            color: #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 5px;
+        }
+
+        .link-row-meta { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.5rem;
+            padding: 2px 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .badge-active  { background: rgba(0,255,65,0.1);   color: var(--accent); border: 1px solid var(--accent-d); }
+        .badge-locked  { background: rgba(230,138,0,0.1);  color: var(--amber);  border: 1px solid rgba(230,138,0,0.4); }
+        .badge-expired { background: rgba(255,68,68,0.1);  color: var(--red);    border: 1px solid rgba(255,68,68,0.4); }
+        .badge-soon    { background: rgba(230,138,0,0.08); color: var(--amber);  border: 1px solid rgba(230,138,0,0.25); }
+        .badge-onetime { background: rgba(160,80,255,0.1); color: var(--purple); border: 1px solid rgba(160,80,255,0.3); }
+        .badge-msg     { background: rgba(80,150,255,0.1); color: var(--blue);   border: 1px solid rgba(80,150,255,0.3); }
+        .badge-dirty   { background: rgba(230,138,0,0.1);  color: var(--amber);  border: 1px solid rgba(230,138,0,0.4); }
+        .badge-new     { background: rgba(0,255,65,0.15);  color: var(--accent); border: 1px solid var(--accent); }
+
+        .link-row-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+
+        /* Inline editor that expands inside the link row */
+        .inline-editor {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+
+        .inline-editor.open { display: block; }
+
+        .inline-editor .field-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .inline-editor .field-row > div { flex: 1; min-width: 120px; }
+
+        /* ── Toggle switch ─────────────────────────────────────────── */
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--border); margin-top: 4px; }
+        .toggle-switch { position: relative; display: inline-block; cursor: pointer; }
+        .toggle-switch input { display: none; }
+        .toggle-track { display: block; width: 36px; height: 19px; background: #222; border: 1px solid var(--border); border-radius: 20px; position: relative; transition: background 0.2s; }
+        .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; background: var(--muted); border-radius: 50%; transition: transform 0.2s, background 0.2s; }
+        .toggle-switch input:checked + .toggle-track { background: var(--accent-d); border-color: var(--accent); }
+        .toggle-switch input:checked + .toggle-track .toggle-thumb { transform: translateX(17px); background: var(--accent); }
+
+        /* ── Salt table ────────────────────────────────────────────── */
+        .salt-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+        .salt-val { flex: 1; background: #000; border: 1px solid var(--border); padding: 10px; font-size: 0.75rem; color: var(--purple); word-break: break-all; font-family: 'Courier New', monospace; min-height: 44px; display: flex; align-items: center; }
+
+        /* ── Backup cards ──────────────────────────────────────────── */
+        .backup-card {
+            border: 1px solid var(--border);
+            background: #0d0d0d;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            transition: border-color 0.15s;
+        }
+
+        .backup-card.pinned { border-color: rgba(230,138,0,0.5); }
+        .backup-card:hover  { border-color: var(--accent-d); }
+
+        .backup-card-info { flex: 1; min-width: 0; }
+
+        .backup-name {
+            font-size: 0.8rem;
+            color: var(--text);
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .backup-meta { font-size: 0.6rem; color: var(--muted); line-height: 1.6; }
+        .backup-actions { display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; flex-shrink: 0; align-items: flex-start; }
+
+        @media (min-width: 520px) {
+            .backup-actions { flex-direction: column; }
+        }
+
+        /* ── Output / export box ───────────────────────────────────── */
+        .export-box {
+            background: #000;
+            border: 1px dashed var(--accent);
+            padding: 12px;
+            font-size: 0.72rem;
+            color: var(--accent);
+            white-space: pre-wrap;
+            word-break: break-all;
+            overflow-x: hidden;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ── Notice / info blocks ──────────────────────────────────── */
+        .notice {
+            font-size: 0.6rem;
+            padding: 8px 10px;
+            line-height: 1.5;
             margin-bottom: 10px;
         }
 
-        .btn { 
-            width: 100%; 
-            padding: 12px; 
-            background: var(--accent); 
-            color: #000; 
-            border: none; 
-            font-weight: bold; 
-            cursor: pointer; 
-            text-transform: uppercase;
-            margin-top: 5px;
-        }
+        .notice.amber { background: rgba(230,138,0,0.07); border: 1px solid rgba(230,138,0,0.3); color: var(--amber); }
+        .notice.accent { background: rgba(0,255,65,0.06); border: 1px solid var(--accent-d); color: var(--accent); }
+        .notice.red    { background: rgba(255,68,68,0.07); border: 1px solid rgba(255,68,68,0.3); color: var(--red); }
 
-        .btn:hover { background: #fff; }
+        /* ── Spinner ───────────────────────────────────────────────── */
+        .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .result-box {
-            margin-top: 15px;
-            background: #000;
-            border: 1px dashed var(--accent);
-            padding: 10px;
-            word-break: break-all;
-            font-size: 0.75rem;
-            color: var(--accent);
-            display: none;
-            white-space: pre-wrap;
-        }
+        /* ── Flash message ─────────────────────────────────────────── */
+        .flash { font-size: 0.6rem; color: var(--accent); letter-spacing: 1px; display: none; margin-top: 6px; }
+        .flash.show { display: block; }
+        .flash.red  { color: var(--red); }
 
-        .label {
-            font-size: 0.65rem;
-            color: #888;
-            margin-bottom: 5px;
-            display: block;
-            text-transform: uppercase;
-        }
+        /* ── Utility ───────────────────────────────────────────────── */
+        .mt-6  { margin-top: 6px; }
+        .mt-10 { margin-top: 10px; }
+        .mt-16 { margin-top: 16px; }
+        .section-title { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+        code { background: rgba(0,255,65,0.08); padding: 1px 5px; font-family: 'Courier New', monospace; font-size: 0.85em; }
     </style>
 </head>
 <body>
 
-    <div class="view-container">
-        
-        <div class="brutalist-card">
-            <div class="terminal-header">HASH_CONVERTER</div>
-            <span class="label">SALT_CONFIG:</span>
-            <input type="text" id="saltInput" value="my_secret_salt_123">
-            <span class="label">INPUT_PASSWORD:</span>
-            <input type="text" id="passInput" placeholder="Enter password...">
-            <button class="btn" onclick="generateHash()">GENERATE_SHA256</button>
-            <div id="hashArea" class="result-box"></div>
-        </div>
+<!-- ── Top bar ──────────────────────────────────────────────────── -->
+<div class="topbar">
+    <div class="topbar-title">// UPLINK WORKSHOP v4</div>
+    <div class="topbar-status" id="topbar-status">
+        <span class="dot-error">◉</span> NOT LOADED
+    </div>
+</div>
 
-        <div class="brutalist-card">
-            <div class="terminal-header">WEBHOOK_OBFUSCATOR</div>
-            <span class="label">FULL_DISCORD_URL:</span>
-            <input type="text" id="webhookInput" placeholder="https://discord.com/api/webhooks/...">
-            <button class="btn" onclick="obfuscateWebhook()">SPLIT_AND_ENCODE</button>
-            <div id="webArea" class="result-box"></div>
-        </div>
+<!-- ── Tab bar ──────────────────────────────────────────────────── -->
+<div class="tabbar">
+    <div class="tab active" onclick="switchTab('links')">Links</div>
+    <div class="tab" onclick="switchTab('settings')">Settings</div>
+    <div class="tab" onclick="switchTab('tools')">Hash Tools</div>
+    <div class="tab" onclick="switchTab('export')">Export</div>
+    <div class="tab" onclick="switchTab('backups')">Backups</div>
+</div>
 
-        <p style="font-size: 0.6rem; color: #444; text-align: center; text-transform: uppercase;">
-            Industrial Encryption Protocol Active
-        </p>
+<!-- ════════════════════════════════════════════════════════════════
+     PANEL: Links
+════════════════════════════════════════════════════════════════ -->
+<div class="panel active" id="panel-links">
+
+    <div class="card accent">
+        <div class="card-header">
+            Data Source
+            <div style="display:flex;gap:6px;">
+                <button class="btn btn-outline btn-sm" onclick="loadFromFile()">&#8635; Reload from links.json</button>
+                <button class="btn btn-purple btn-sm" onclick="switchTab('backups')">&#128196; Backups</button>
+            </div>
+        </div>
+        <div id="source-info" style="font-size:0.65rem;color:var(--muted);line-height:1.7;">
+            Not loaded yet. Click Reload or load a backup.
+        </div>
     </div>
 
-    <script>
-        async function generateHash() {
-            const p = document.getElementById('passInput').value;
-            const s = document.getElementById('saltInput').value;
-            if(!p) return;
+    <div class="card">
+        <div class="card-header">
+            Registered Links
+            <button class="btn btn-primary btn-sm" onclick="openAddLink()">+ ADD LINK</button>
+        </div>
 
-            const step1 = btoa(p + s);
-            const step2 = btoa(step1);
-            const msgBuffer = new TextEncoder().encode(step2);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        <div id="link-list-area">
+            <p style="font-size:0.65rem;color:var(--muted);">Load links.json to begin.</p>
+        </div>
+    </div>
 
-            const area = document.getElementById('hashArea');
-            area.innerText = hash;
-            area.style.display = 'block';
-        }
+    <!-- Add / edit form — hidden until triggered -->
+    <div class="card accent" id="add-link-card" style="display:none;">
+        <div class="card-header">
+            <span id="add-link-title">Add New Link</span>
+            <button class="btn btn-outline btn-sm" onclick="closeAddLink()">✕ CANCEL</button>
+        </div>
 
-        function obfuscateWebhook() {
-            const url = document.getElementById('webhookInput').value;
-            if(!url) return;
+        <label class="field-label">Shortcode (the ?id= key)</label>
+        <input type="text" id="new-code" placeholder="e.g. MyLink123" maxlength="32">
 
-            const mid = Math.floor(url.length / 2);
-            const a = btoa(url.substring(0, mid));
-            const b = btoa(url.substring(mid));
+        <label class="field-label">Destination URL</label>
+        <input type="url" id="new-url" placeholder="https://...">
 
-            const area = document.getElementById('webArea');
-            area.innerText = `partA: "${a}",\npartB: "${b}"`;
-            area.style.display = 'block';
-        }
-    </script>
+        <label class="field-label">Custom Redirect Message (optional)</label>
+        <input type="text" id="new-msg" placeholder="e.g. Connecting to server...">
+
+        <label class="field-label">Expiry Date (optional)</label>
+        <input type="date" id="new-expires" style="color-scheme:dark;">
+
+        <div class="toggle-row">
+            <label class="field-label" style="margin:0;">Lock This Link</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="new-locked" onchange="toggleNewLockFields()">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+        </div>
+
+        <div id="new-lock-fields" style="display:none;margin-top:10px;">
+            <div class="notice amber">&#9888; Pick a salt from your salt table — the same salt must be in <code>G_CONFIG.settings.salts</code> (managed in Settings tab)</div>
+            <label class="field-label">Salt</label>
+            <select id="new-salt-select" style="margin-bottom:6px;"></select>
+            <label class="field-label">Or custom salt (overrides dropdown)</label>
+            <input type="text" id="new-salt-custom" placeholder="Custom salt...">
+            <label class="field-label">Lock Password</label>
+            <input type="password" id="new-pass" placeholder="Password visitors must enter...">
+        </div>
+
+        <div class="toggle-row">
+            <label class="field-label" style="margin:0;">One-Time Visit</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="new-onetime" onchange="toggleNewOtFields()">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+        </div>
+
+        <div id="new-ot-fields" style="display:none;margin-top:10px;">
+            <div class="notice" style="background:rgba(160,80,255,0.06);border:1px solid rgba(160,80,255,0.3);color:var(--purple);">
+                &#128273; Optional override password — lets someone reset their own claim without admin access.
+            </div>
+            <label class="field-label">Override Salt</label>
+            <select id="new-otsalt-select" style="margin-bottom:6px;"></select>
+            <label class="field-label">Or custom salt</label>
+            <input type="text" id="new-otsalt-custom" placeholder="Custom salt...">
+            <label class="field-label">Override Password (leave blank for none)</label>
+            <input type="password" id="new-otpass" placeholder="Optional...">
+        </div>
+
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="saveNewLink()">&#10003; SAVE LINK</button>
+        </div>
+        <div class="flash" id="add-link-flash"></div>
+    </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     PANEL: Settings
+════════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-settings">
+
+    <!-- Salt table -->
+    <div class="card purple">
+        <div class="card-header purple">
+            Salt Table
+            <span style="font-size:0.55rem;color:var(--muted);font-weight:normal;">
+                app tries all salts on every hash check
+            </span>
+        </div>
+        <div class="notice" style="background:rgba(160,80,255,0.06);border:1px solid rgba(160,80,255,0.3);color:var(--purple);">
+            Add as many salts as you like. Never remove a salt that was used to generate an existing hash — it will break that link's password. Adding new salts is always safe.
+        </div>
+        <div id="salt-table-list"></div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+            <input type="text" id="new-salt-val" placeholder="New salt value..." style="flex:1;margin:0;">
+            <button class="btn btn-purple btn-sm" onclick="addSalt()" style="white-space:nowrap;">+ ADD</button>
+        </div>
+        <div class="flash mt-6" id="salt-flash"></div>
+    </div>
+
+    <!-- Master password hash -->
+    <div class="card">
+        <div class="card-header">Admin Password Hash</div>
+        <div class="notice amber">&#9888; To change the admin password, use the Hash Tools tab to generate a new hash, then paste it here.</div>
+        <label class="field-label">masterHash</label>
+        <input type="text" id="settings-masterHash" placeholder="SHA-256 hex...">
+        <div class="btn-row">
+            <button class="btn btn-primary btn-sm" onclick="saveSettingsField('masterHash')">SAVE HASH</button>
+        </div>
+        <div class="flash mt-6" id="masterhash-flash"></div>
+    </div>
+
+    <!-- Webhook -->
+    <div class="card">
+        <div class="card-header">Discord Webhook</div>
+        <label class="field-label">hookA (base64 part A)</label>
+        <input type="text" id="settings-hookA" placeholder="hookA...">
+        <label class="field-label">hookB (base64 part B)</label>
+        <input type="text" id="settings-hookB" placeholder="hookB...">
+        <div class="btn-row">
+            <button class="btn btn-primary btn-sm" onclick="saveWebhook()">SAVE WEBHOOK</button>
+            <button class="btn btn-outline btn-sm" onclick="verifyWebhook()">VERIFY</button>
+        </div>
+        <div class="flash mt-6" id="webhook-flash"></div>
+    </div>
+
+    <!-- Max attempts -->
+    <div class="card">
+        <div class="card-header">Admin Lockout</div>
+        <label class="field-label">Max wrong attempts before lockout</label>
+        <input type="text" id="settings-maxAttempts" placeholder="5">
+        <div class="btn-row">
+            <button class="btn btn-primary btn-sm" onclick="saveSettingsField('maxAdminAttempts', 'settings-maxAttempts', parseInt)">SAVE</button>
+        </div>
+        <div class="flash mt-6" id="attempts-flash"></div>
+    </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     PANEL: Hash Tools
+════════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-tools">
+
+    <!-- Hash generator -->
+    <div class="card accent">
+        <div class="card-header">Hash Generator</div>
+        <div class="notice accent">Produces a SHA-256 hash using the same pipeline as index.html: <code>btoa(pass+salt) → btoa → SHA-256</code></div>
+        <label class="field-label">Salt — pick from table</label>
+        <select id="tool-salt-select" style="margin-bottom:6px;"></select>
+        <label class="field-label">Or type a custom salt</label>
+        <input type="text" id="tool-salt-custom" placeholder="Custom salt (overrides dropdown)...">
+        <label class="field-label">Password to Hash</label>
+        <input type="text" id="tool-pass" placeholder="Enter password..." onkeydown="if(event.key==='Enter') runHashTool()">
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runHashTool()">GENERATE HASH</button>
+        </div>
+        <div id="tool-hash-out" style="display:none;margin-top:12px;">
+            <div class="export-box" id="tool-hash-result" style="max-height:80px;"></div>
+            <div class="btn-row">
+                <button class="btn btn-outline btn-sm" onclick="copyEl('tool-hash-result','tool-hash-flash')">COPY HASH</button>
+            </div>
+            <div class="flash mt-6" id="tool-hash-flash"></div>
+        </div>
+    </div>
+
+    <!-- Webhook obfuscator -->
+    <div class="card">
+        <div class="card-header">Webhook Obfuscator</div>
+        <label class="field-label">Full Discord Webhook URL</label>
+        <input type="text" id="tool-webhook" placeholder="https://discord.com/api/webhooks/...">
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runObfuscate()">SPLIT AND ENCODE</button>
+        </div>
+        <div id="tool-webhook-out" style="display:none;margin-top:12px;">
+            <div class="export-box" id="tool-webhook-result" style="max-height:80px;"></div>
+            <div class="btn-row">
+                <button class="btn btn-outline btn-sm" onclick="copyEl('tool-webhook-result','tool-webhook-flash')">COPY PARTS</button>
+                <button class="btn btn-amber btn-sm" onclick="applyWebhookToSettings()">APPLY TO SETTINGS</button>
+            </div>
+            <div class="flash mt-6" id="tool-webhook-flash"></div>
+        </div>
+    </div>
+
+    <!-- Webhook revealer -->
+    <div class="card">
+        <div class="card-header">Webhook Revealer</div>
+        <label class="field-label">hookA</label>
+        <input type="text" id="tool-revealA" placeholder="hookA value...">
+        <label class="field-label">hookB</label>
+        <input type="text" id="tool-revealB" placeholder="hookB value...">
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="runReveal()">RECONSTRUCT URL</button>
+        </div>
+        <div id="tool-reveal-out" style="display:none;margin-top:12px;">
+            <div class="export-box" id="tool-reveal-result" style="max-height:60px;"></div>
+            <div class="btn-row">
+                <button class="btn btn-outline btn-sm" onclick="copyEl('tool-reveal-result','tool-reveal-flash')">COPY URL</button>
+            </div>
+            <div class="flash mt-6" id="tool-reveal-flash"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     PANEL: Export
+════════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-export">
+
+    <div class="card accent">
+        <div class="card-header">Export links.json</div>
+        <div class="notice accent">
+            This is your complete config. Copy everything below and paste it into <code>links.json</code> in your repo, then commit.
+        </div>
+        <div class="btn-row" style="margin-bottom:12px;">
+            <button class="btn btn-primary" onclick="buildExport()">&#8635; REGENERATE</button>
+            <button class="btn btn-outline btn-sm" onclick="copyEl('export-box','export-flash')">COPY ALL</button>
+            <button class="btn btn-purple btn-sm" onclick="saveBackupFromExport()">&#128190; SAVE BACKUP</button>
+        </div>
+        <div class="flash" id="export-flash"></div>
+        <div class="export-box" id="export-box" style="margin-top:10px;">— click Regenerate to build export —</div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Unsaved Changes</div>
+        <div id="changes-summary" style="font-size:0.65rem;color:var(--muted);line-height:1.8;">
+            No changes tracked yet.
+        </div>
+    </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     PANEL: Backups
+════════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-backups">
+
+    <div class="card accent">
+        <div class="card-header">
+            Backup Settings
+        </div>
+        <label class="field-label">Auto-delete oldest unpinned backups when count exceeds</label>
+        <select id="backup-limit-select" onchange="saveBackupLimit()">
+            <option value="10">10 backups</option>
+            <option value="20">20 backups</option>
+            <option value="50">50 backups</option>
+            <option value="0">No limit</option>
+        </select>
+        <div class="notice amber" style="margin-top:4px;">
+            &#128204; Pinned backups never count toward this limit and are never auto-deleted.
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            Save Backup
+        </div>
+        <label class="field-label">Backup Name (optional — auto-named if blank)</label>
+        <input type="text" id="backup-name-input" placeholder="e.g. Before major changes...">
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="saveBackupManual()">&#128190; SAVE BACKUP NOW</button>
+        </div>
+        <div class="flash mt-6" id="backup-save-flash"></div>
+    </div>
+
+    <div class="card" id="backup-list-card">
+        <div class="card-header">
+            Saved Backups
+            <span id="backup-count-label" style="font-size:0.55rem;color:var(--muted);font-weight:normal;"></span>
+        </div>
+        <div id="backup-list-area">
+            <p style="font-size:0.65rem;color:var(--muted);">No backups saved yet.</p>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════════ -->
+<script>
+
+/* ─── Runtime state ──────────────────────────────────────────────── */
+let config     = null;   // Working copy — modified in memory, never auto-saved
+let loadedFrom = null;   // 'file' | 'backup:ID' — for display
+let isDirty    = false;  // True when in-memory config differs from what was loaded
+let changeLog  = [];     // Human-readable list of changes made this session
+
+/* ─── localStorage keys ──────────────────────────────────────────── */
+const LS_BACKUP_PREFIX = 'uplink_backup_';
+const LS_BACKUP_LIMIT  = 'uplink_backup_limit';
+
+/* ─── Tab switching ──────────────────────────────────────────────── */
+
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+    const tabs = ['links','settings','tools','export','backups'];
+    document.querySelectorAll('.tab')[tabs.indexOf(name)]?.classList.add('active');
+    document.getElementById(`panel-${name}`)?.classList.add('active');
+
+    // Rebuild salt dropdowns whenever the user enters a tab that has them
+    if (name === 'links' || name === 'tools') rebuildSaltDropdowns();
+    if (name === 'settings') renderSaltTable();
+    if (name === 'export')   buildExport();
+    if (name === 'backups')  renderBackupList();
+}
+
+/* ─── Load config from links.json ────────────────────────────────── */
+
+async function loadFromFile() {
+    setStatus('loading');
+    try {
+        const res = await fetch('./links.json?_=' + Date.now()); // bust cache
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.settings || !data.links) throw new Error('Invalid structure');
+
+        config     = JSON.parse(JSON.stringify(data)); // deep clone
+        loadedFrom = 'file';
+        isDirty    = false;
+        changeLog  = [];
+
+        renderAll();
+        setStatus('live');
+        showSourceInfo(`Loaded from links.json — ${Object.keys(config.links).length} links`);
+
+    } catch (err) {
+        setStatus('error');
+        showSourceInfo(`Failed to load links.json: ${err.message}`);
+    }
+}
+
+/* ─── Status bar ─────────────────────────────────────────────────── */
+
+function setStatus(state) {
+    const el = document.getElementById('topbar-status');
+    const statuses = {
+        loading: '<span class="dot-error">◉</span> LOADING...',
+        live:    '<span class="dot-live">◉</span> LIVE — LOADED FROM FILE',
+        dirty:   '<span class="dot-dirty">◉</span> UNSAVED CHANGES',
+        backup:  '<span class="dot-live" style="color:var(--purple)">◉</span> LOADED FROM BACKUP',
+        error:   '<span class="dot-error">◉</span> LOAD ERROR',
+    };
+    el.innerHTML = statuses[state] || statuses.error;
+}
+
+function showSourceInfo(text) {
+    document.getElementById('source-info').textContent = text;
+}
+
+/* ─── Render everything from current config ──────────────────────── */
+
+function renderAll() {
+    renderLinkList();
+    renderSaltTable();
+    renderSettingsInputs();
+    rebuildSaltDropdowns();
+    renderBackupLimit();
+}
+
+/* ─── Link list rendering ────────────────────────────────────────── */
+
+function renderLinkList() {
+    const area = document.getElementById('link-list-area');
+    if (!config) { area.innerHTML = '<p style="font-size:0.65rem;color:var(--muted);">Load links.json to begin.</p>'; return; }
+
+    const entries = Object.entries(config.links);
+    if (entries.length === 0) { area.innerHTML = '<p style="font-size:0.65rem;color:var(--muted);">No links yet. Add one above.</p>'; return; }
+
+    area.innerHTML = '';
+    entries.forEach(([code, data], idx) => {
+        area.appendChild(buildLinkRow(code, data, idx, entries.length));
+    });
+}
+
+function buildLinkRow(code, data, idx, total) {
+    const wrap = document.createElement('div');
+    wrap.className = 'link-row';
+    wrap.id = `link-row-${code}`;
+
+    // Status badge
+    const now     = new Date();
+    const expired = data.expires && new Date(data.expires + 'T23:59:59') < now;
+    const days    = data.expires ? Math.ceil((new Date(data.expires + 'T23:59:59') - now) / 86400000) : null;
+
+    let badge = '<span class="badge badge-active">ACTIVE</span>';
+    if (expired)                             badge = '<span class="badge badge-expired">EXPIRED</span>';
+    else if (data.locked)                    badge = '<span class="badge badge-locked">LOCKED</span>';
+    else if (days !== null && days <= 7)     badge = `<span class="badge badge-soon">EXPIRES ${days}d</span>`;
+    else if (data.oneTime)                   badge = '<span class="badge badge-onetime">ONE-TIME</span>';
+
+    const expiryLabel = data.expires ? `<span style="font-size:0.58rem;color:#555;">&#128197; ${data.expires}</span>` : '';
+    const msgBadge    = data.message ? '<span class="badge badge-msg">MSG</span>' : '';
+
+    wrap.innerHTML = `
+        <div class="link-row-order">
+            <button class="order-btn" onclick="moveLink('${code}', -1)" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>&#9650;</button>
+            <button class="order-btn" onclick="moveLink('${code}', 1)"  ${idx === total - 1 ? 'disabled style="opacity:0.3"' : ''}>&#9660;</button>
+        </div>
+        <div class="link-row-info">
+            <div class="link-row-code">#${code}</div>
+            <div class="link-row-url">${data.url}</div>
+            <div class="link-row-meta">${badge} ${expiryLabel} ${msgBadge}</div>
+            <!-- Inline editor — toggled by the Edit button -->
+            <div class="inline-editor" id="editor-${code}">
+                ${buildInlineEditor(code, data)}
+            </div>
+        </div>
+        <div class="link-row-actions">
+            <button class="btn btn-outline btn-sm" onclick="toggleEditor('${code}')">EDIT</button>
+            <button class="btn btn-sm" style="background:var(--red);color:#fff;border:none;" onclick="deleteLink('${code}')">DEL</button>
+        </div>
+    `;
+
+    return wrap;
+}
+
+function buildInlineEditor(code, data) {
+    return `
+        <label class="field-label">Destination URL</label>
+        <input type="url" id="ed-url-${code}" value="${data.url || ''}">
+
+        <label class="field-label">Custom Message (optional)</label>
+        <input type="text" id="ed-msg-${code}" value="${data.message || ''}">
+
+        <div style="display:flex;gap:10px;">
+            <div style="flex:1;">
+                <label class="field-label">Expiry Date</label>
+                <input type="date" id="ed-expires-${code}" value="${data.expires || ''}" style="color-scheme:dark;margin-bottom:6px;">
+            </div>
+        </div>
+
+        <div style="display:flex;gap:16px;padding:8px 0;border-top:1px solid var(--border);margin-top:4px;">
+            <label style="font-size:0.6rem;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" id="ed-locked-${code}" ${data.locked ? 'checked' : ''}> LOCKED
+            </label>
+            <label style="font-size:0.6rem;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" id="ed-onetime-${code}" ${data.oneTime ? 'checked' : ''}> ONE-TIME
+            </label>
+        </div>
+
+        <div class="notice amber" style="font-size:0.58rem;">
+            &#9888; To change a password hash, generate a new one in Hash Tools and paste it below. Leave blank to keep existing.
+        </div>
+
+        <label class="field-label">Lock Hash (leave blank to keep current)</label>
+        <input type="text" id="ed-hash-${code}" placeholder="paste new hash or leave blank..." style="font-size:0.7rem;">
+
+        <label class="field-label">One-Time Override Hash (leave blank to keep current)</label>
+        <input type="text" id="ed-otpass-${code}" placeholder="paste new hash or leave blank..." style="font-size:0.7rem;">
+
+        <div class="btn-row">
+            <button class="btn btn-primary btn-sm" onclick="saveInlineEdit('${code}')">&#10003; SAVE CHANGES</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleEditor('${code}')">CANCEL</button>
+        </div>
+        <div class="flash mt-6" id="ed-flash-${code}"></div>
+    `;
+}
+
+function toggleEditor(code) {
+    const ed = document.getElementById(`editor-${code}`);
+    const row = document.getElementById(`link-row-${code}`);
+    const open = ed.classList.toggle('open');
+    row.classList.toggle('editing', open);
+}
+
+function saveInlineEdit(code) {
+    if (!config.links[code]) return;
+
+    const d = config.links[code];
+
+    // Apply all editable fields — only update hash fields if something was entered
+    d.url     = document.getElementById(`ed-url-${code}`).value.trim()     || d.url;
+    d.message = document.getElementById(`ed-msg-${code}`).value.trim()     || null;
+    d.expires = document.getElementById(`ed-expires-${code}`).value.trim() || null;
+    d.locked  = document.getElementById(`ed-locked-${code}`).checked;
+    d.oneTime = document.getElementById(`ed-onetime-${code}`).checked;
+
+    const newHash   = document.getElementById(`ed-hash-${code}`).value.trim();
+    const newOtHash = document.getElementById(`ed-otpass-${code}`).value.trim();
+    if (newHash)   d.hash        = newHash;
+    if (newOtHash) d.oneTimePass = newOtHash;
+
+    markDirty(`Edited link "${code}"`);
+    renderLinkList();
+
+    const fl = document.getElementById(`ed-flash-${code}`);
+    if (fl) { fl.textContent = '✓ Saved'; fl.classList.add('show'); setTimeout(() => fl.classList.remove('show'), 2000); }
+}
+
+function moveLink(code, direction) {
+    const entries = Object.entries(config.links);
+    const idx     = entries.findIndex(([k]) => k === code);
+    const swap    = idx + direction;
+    if (swap < 0 || swap >= entries.length) return;
+
+    // Swap entries and rebuild the links object preserving order
+    [entries[idx], entries[swap]] = [entries[swap], entries[idx]];
+    config.links = Object.fromEntries(entries);
+
+    markDirty(`Moved "${code}" ${direction < 0 ? 'up' : 'down'}`);
+    renderLinkList();
+}
+
+function deleteLink(code) {
+    if (!confirm(`Delete link "${code}"?\n${config.links[code]?.url}\n\nThis cannot be undone without a backup.`)) return;
+    delete config.links[code];
+    markDirty(`Deleted link "${code}"`);
+    renderLinkList();
+}
+
+/* ─── Add link form ──────────────────────────────────────────────── */
+
+function openAddLink() {
+    document.getElementById('add-link-card').style.display = 'block';
+    document.getElementById('add-link-title').textContent = 'Add New Link';
+    // Clear all fields
+    ['new-code','new-url','new-msg','new-salt-custom','new-pass','new-otsalt-custom','new-otpass']
+        .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('new-expires').value   = '';
+    document.getElementById('new-locked').checked  = false;
+    document.getElementById('new-onetime').checked = false;
+    document.getElementById('new-lock-fields').style.display = 'none';
+    document.getElementById('new-ot-fields').style.display   = 'none';
+    document.getElementById('add-link-flash').classList.remove('show');
+    document.getElementById('add-link-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function closeAddLink() {
+    document.getElementById('add-link-card').style.display = 'none';
+}
+
+function toggleNewLockFields() {
+    document.getElementById('new-lock-fields').style.display =
+        document.getElementById('new-locked').checked ? 'block' : 'none';
+}
+
+function toggleNewOtFields() {
+    document.getElementById('new-ot-fields').style.display =
+        document.getElementById('new-onetime').checked ? 'block' : 'none';
+}
+
+async function saveNewLink() {
+    if (!config) { alert('Load config first.'); return; }
+
+    const code    = document.getElementById('new-code').value.trim();
+    const url     = document.getElementById('new-url').value.trim();
+    const msg     = document.getElementById('new-msg').value.trim();
+    const expires = document.getElementById('new-expires').value || null;
+    const locked  = document.getElementById('new-locked').checked;
+    const onetime = document.getElementById('new-onetime').checked;
+    const pass    = document.getElementById('new-pass').value;
+    const otpass  = document.getElementById('new-otpass').value;
+
+    const fl = document.getElementById('add-link-flash');
+
+    if (!code)          { showFlash(fl, '⚠ Shortcode is required.', true); return; }
+    if (!url)           { showFlash(fl, '⚠ URL is required.', true); return; }
+    if (config.links[code]) { showFlash(fl, `⚠ Shortcode "${code}" already exists.`, true); return; }
+    if (locked && !pass) { showFlash(fl, '⚠ Lock password is required for locked links.', true); return; }
+
+    // Resolve active salt from dropdown or custom field
+    const salt   = document.getElementById('new-salt-custom').value.trim() || document.getElementById('new-salt-select').value || config.settings.salts[0];
+    const otSalt = document.getElementById('new-otsalt-custom').value.trim() || document.getElementById('new-otsalt-select').value || config.settings.salts[0];
+
+    // Hash passwords using the same pipeline as index.html
+    const lockHash = locked && pass ? await computeHash(pass, salt)           : null;
+    const otHash   = onetime && otpass ? await computeHash(otpass, otSalt)    : null;
+
+    config.links[code] = {
+        url,
+        locked,
+        ...(lockHash  && { hash: lockHash }),
+        expires,
+        message: msg || null,
+        oneTime: onetime,
+        ...(otHash    && { oneTimePass: otHash }),
+    };
+
+    markDirty(`Added new link "${code}"`);
+    renderLinkList();
+    closeAddLink();
+    showFlash(fl, `✓ Link "${code}" added.`);
+}
+
+/* ─── Settings panel ─────────────────────────────────────────────── */
+
+function renderSettingsInputs() {
+    if (!config) return;
+    document.getElementById('settings-masterHash').value  = config.settings.masterHash || '';
+    document.getElementById('settings-hookA').value       = config.settings.hookA      || '';
+    document.getElementById('settings-hookB').value       = config.settings.hookB      || '';
+    document.getElementById('settings-maxAttempts').value = config.settings.maxAdminAttempts ?? 5;
+}
+
+function saveSettingsField(field, inputId, transform) {
+    if (!config) return;
+    const id  = inputId || `settings-${field}`;
+    const val = document.getElementById(id).value.trim();
+    config.settings[field] = transform ? transform(val) : val;
+    markDirty(`Updated settings.${field}`);
+    const flashId = field === 'masterHash' ? 'masterhash-flash' : 'attempts-flash';
+    const fl = document.getElementById(flashId);
+    if (fl) showFlash(fl, '✓ Saved to memory (export to apply)');
+}
+
+function saveWebhook() {
+    if (!config) return;
+    config.settings.hookA = document.getElementById('settings-hookA').value.trim();
+    config.settings.hookB = document.getElementById('settings-hookB').value.trim();
+    markDirty('Updated webhook parts');
+    showFlash(document.getElementById('webhook-flash'), '✓ Saved to memory (export to apply)');
+}
+
+function verifyWebhook() {
+    const a = document.getElementById('settings-hookA').value.trim();
+    const b = document.getElementById('settings-hookB').value.trim();
+    const fl = document.getElementById('webhook-flash');
+    if (!a || !b) { showFlash(fl, '⚠ Both parts required.', true); return; }
+    try {
+        const url = atob(a) + atob(b);
+        showFlash(fl, `✓ ${url.substring(0, 60)}...`);
+    } catch (_) { showFlash(fl, '⚠ Invalid base64.', true); }
+}
+
+/* ─── Salt table ─────────────────────────────────────────────────── */
+
+function renderSaltTable() {
+    const area = document.getElementById('salt-table-list');
+    if (!config) { area.innerHTML = '<p style="font-size:0.65rem;color:var(--muted);">Load config first.</p>'; return; }
+
+    area.innerHTML = '';
+    config.settings.salts.forEach((salt, i) => {
+        const row = document.createElement('div');
+        row.className = 'salt-row';
+        row.innerHTML = `
+            <div class="salt-val">${salt}</div>
+            <button class="btn btn-outline btn-sm" onclick="removeSalt(${i})"
+                    style="border-color:rgba(255,68,68,0.4);color:var(--red);flex-shrink:0;"
+                    title="Remove salt">✕</button>
+        `;
+        area.appendChild(row);
+    });
+    rebuildSaltDropdowns();
+}
+
+function addSalt() {
+    if (!config) return;
+    const val = document.getElementById('new-salt-val').value.trim();
+    const fl  = document.getElementById('salt-flash');
+    if (!val) { showFlash(fl, '⚠ Enter a salt value.', true); return; }
+    if (config.settings.salts.includes(val)) { showFlash(fl, '⚠ Already in table.', true); return; }
+    config.settings.salts.push(val);
+    document.getElementById('new-salt-val').value = '';
+    markDirty(`Added salt "${val.substring(0,20)}..."`);
+    renderSaltTable();
+    showFlash(fl, '✓ Salt added.');
+}
+
+function removeSalt(i) {
+    if (!config) return;
+    if (config.settings.salts.length === 1) { alert('You need at least one salt.'); return; }
+    const salt = config.settings.salts[i];
+    if (!confirm(`Remove salt "${salt}"?\n\nAny hashes generated with this salt will stop working.`)) return;
+    config.settings.salts.splice(i, 1);
+    markDirty(`Removed a salt`);
+    renderSaltTable();
+}
+
+/** Rebuild all salt dropdown elements across panels */
+function rebuildSaltDropdowns() {
+    const salts = config?.settings?.salts || [];
+    const ids   = ['new-salt-select','new-otsalt-select','tool-salt-select'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = salts.map(s => `<option value="${s}">${s.length > 45 ? s.substring(0,45) + '...' : s}</option>`).join('');
+    });
+}
+
+/* ─── Hash tools ─────────────────────────────────────────────────── */
+
+async function computeHash(input, salt) {
+    const step1     = btoa(input + salt);
+    const step2     = btoa(step1);
+    const msgBuffer = new TextEncoder().encode(step2);
+    const hashBuf   = await crypto.subtle.digest('SHA-256', msgBuffer);
+    return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function runHashTool() {
+    const pass   = document.getElementById('tool-pass').value;
+    const custom = document.getElementById('tool-salt-custom').value.trim();
+    const salt   = custom || document.getElementById('tool-salt-select').value;
+    if (!pass) return;
+    if (!salt) { alert('No salt available. Add one in Settings.'); return; }
+
+    const hash = await computeHash(pass, salt);
+
+    const out = document.getElementById('tool-hash-result');
+    // Show hash and the salt used — critical for the user to know which salt to keep
+    out.textContent = `Hash:\n${hash}\n\nSalt used: "${salt}"`;
+    document.getElementById('tool-hash-out').style.display = 'block';
+}
+
+function runObfuscate() {
+    const url = document.getElementById('tool-webhook').value.trim();
+    if (!url) return;
+    const mid = Math.floor(url.length / 2);
+    const a   = btoa(url.substring(0, mid));
+    const b   = btoa(url.substring(mid));
+    document.getElementById('tool-webhook-result').textContent = `hookA: "${a}"\nhookB: "${b}"`;
+    document.getElementById('tool-webhook-out').style.display = 'block';
+}
+
+function runReveal() {
+    const a = document.getElementById('tool-revealA').value.trim();
+    const b = document.getElementById('tool-revealB').value.trim();
+    const el = document.getElementById('tool-reveal-result');
+    try {
+        el.textContent = atob(a) + atob(b);
+        document.getElementById('tool-reveal-out').style.display = 'block';
+    } catch (_) {
+        el.textContent = 'ERROR: Invalid base64 input.';
+        document.getElementById('tool-reveal-out').style.display = 'block';
+    }
+}
+
+/** One-click: take obfuscated parts and apply them straight to settings */
+function applyWebhookToSettings() {
+    if (!config) { alert('Load config first.'); return; }
+    const text  = document.getElementById('tool-webhook-result').textContent;
+    const matchA = text.match(/hookA: "([^"]+)"/);
+    const matchB = text.match(/hookB: "([^"]+)"/);
+    if (!matchA || !matchB) { alert('Generate the obfuscated parts first.'); return; }
+    config.settings.hookA = matchA[1];
+    config.settings.hookB = matchB[1];
+    document.getElementById('settings-hookA').value = matchA[1];
+    document.getElementById('settings-hookB').value = matchB[1];
+    markDirty('Updated webhook from obfuscator');
+    showFlash(document.getElementById('tool-webhook-flash'), '✓ Applied to settings. Go to Export to save.');
+}
+
+/* ─── Export ─────────────────────────────────────────────────────── */
+
+function buildExport() {
+    const box = document.getElementById('export-box');
+    if (!config) { box.textContent = '— load config first —'; return; }
+
+    // Pretty-printed JSON — matches the links.json format exactly
+    box.textContent = JSON.stringify(config, null, 2);
+    updateChangesSummary();
+}
+
+function updateChangesSummary() {
+    const el = document.getElementById('changes-summary');
+    if (changeLog.length === 0) {
+        el.textContent = 'No changes tracked this session.';
+        return;
+    }
+    el.innerHTML = changeLog
+        .map(c => `<div style="display:flex;gap:8px;"><span style="color:#444;">${c.time}</span><span>${c.msg}</span></div>`)
+        .join('');
+}
+
+/* ─── Dirty tracking ─────────────────────────────────────────────── */
+
+function markDirty(description) {
+    isDirty = true;
+    changeLog.push({ time: new Date().toLocaleTimeString(), msg: description });
+    setStatus('dirty');
+}
+
+/* ─── Backup system ──────────────────────────────────────────────── */
+
+/** Read the backup limit setting from localStorage (default 10) */
+function getBackupLimit() {
+    return parseInt(localStorage.getItem(LS_BACKUP_LIMIT) || '10');
+}
+
+function saveBackupLimit() {
+    const val = document.getElementById('backup-limit-select').value;
+    localStorage.setItem(LS_BACKUP_LIMIT, val);
+}
+
+function renderBackupLimit() {
+    const val = String(getBackupLimit());
+    const sel = document.getElementById('backup-limit-select');
+    // Find matching option; if none, pick the first
+    const opt = [...sel.options].find(o => o.value === val);
+    if (opt) sel.value = val;
+}
+
+/** Get all backups from localStorage, sorted newest first */
+function getAllBackups() {
+    return Object.keys(localStorage)
+        .filter(k => k.startsWith(LS_BACKUP_PREFIX))
+        .map(k => { try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; } })
+        .filter(Boolean)
+        .sort((a, b) => b.timestamp - a.timestamp);
+}
+
+/**
+ * Core backup save routine.
+ * Enforces the unpinned limit — deletes oldest unpinned if over limit.
+ */
+function saveBackup(name, dataSnapshot) {
+    const id     = LS_BACKUP_PREFIX + Date.now();
+    const backup = {
+        id,
+        name:      name || `Backup — ${new Date().toLocaleString()}`,
+        timestamp: Date.now(),
+        pinned:    false,
+        linkCount: Object.keys(dataSnapshot.links || {}).length,
+        data:      dataSnapshot,
+    };
+
+    localStorage.setItem(id, JSON.stringify(backup));
+
+    // Enforce limit on unpinned backups only
+    enforceBackupLimit();
+
+    return backup;
+}
+
+function enforceBackupLimit() {
+    const limit = getBackupLimit();
+    if (limit === 0) return; // No limit configured
+
+    const all      = getAllBackups();
+    const unpinned = all.filter(b => !b.pinned);
+
+    if (unpinned.length > limit) {
+        // Sort oldest first and delete the excess
+        const toDelete = unpinned
+            .sort((a, b) => a.timestamp - b.timestamp)
+            .slice(0, unpinned.length - limit);
+
+        toDelete.forEach(b => localStorage.removeItem(b.id));
+    }
+}
+
+function saveBackupManual() {
+    if (!config) { alert('Load config first.'); return; }
+    const name    = document.getElementById('backup-name-input').value.trim();
+    const backup  = saveBackup(name, JSON.parse(JSON.stringify(config)));
+    document.getElementById('backup-name-input').value = '';
+    showFlash(document.getElementById('backup-save-flash'), `✓ Backup saved: "${backup.name}"`);
+    renderBackupList();
+}
+
+function saveBackupFromExport() {
+    if (!config) { alert('Load config first.'); return; }
+    saveBackup(`Pre-export — ${new Date().toLocaleString()}`, JSON.parse(JSON.stringify(config)));
+    renderBackupList();
+    showFlash(document.getElementById('export-flash'), '✓ Backup saved before export.');
+}
+
+function loadBackup(id) {
+    const raw = localStorage.getItem(id);
+    if (!raw) { alert('Backup not found.'); return; }
+    try {
+        const backup = JSON.parse(raw);
+        config       = JSON.parse(JSON.stringify(backup.data)); // deep clone
+        loadedFrom   = `backup:${id}`;
+        isDirty      = false;
+        changeLog    = [];
+        renderAll();
+        setStatus('backup');
+        showSourceInfo(`Loaded from backup: "${backup.name}" (${new Date(backup.timestamp).toLocaleString()})`);
+        switchTab('links');
+    } catch (err) {
+        alert('Failed to load backup: ' + err.message);
+    }
+}
+
+function deleteBackup(id) {
+    const raw = localStorage.getItem(id);
+    if (!raw) return;
+    const b = JSON.parse(raw);
+    if (b.pinned && !confirm(`"${b.name}" is pinned. Delete anyway?`)) return;
+    if (!b.pinned && !confirm(`Delete backup "${b.name}"?`)) return;
+    localStorage.removeItem(id);
+    renderBackupList();
+}
+
+function togglePin(id) {
+    const raw = localStorage.getItem(id);
+    if (!raw) return;
+    const b  = JSON.parse(raw);
+    b.pinned = !b.pinned;
+    localStorage.setItem(id, JSON.stringify(b));
+    renderBackupList();
+}
+
+function renameBackup(id) {
+    const raw = localStorage.getItem(id);
+    if (!raw) return;
+    const b    = JSON.parse(raw);
+    const name = prompt('New backup name:', b.name);
+    if (name === null) return; // user cancelled
+    b.name = name.trim() || b.name;
+    localStorage.setItem(id, JSON.stringify(b));
+    renderBackupList();
+}
+
+function renderBackupList() {
+    const area  = document.getElementById('backup-list-area');
+    const label = document.getElementById('backup-count-label');
+    const all   = getAllBackups();
+
+    const pinned   = all.filter(b =>  b.pinned);
+    const unpinned = all.filter(b => !b.pinned);
+    const limit    = getBackupLimit();
+
+    label.textContent = `${unpinned.length}${limit > 0 ? '/' + limit : ''} unpinned, ${pinned.length} pinned`;
+
+    if (all.length === 0) {
+        area.innerHTML = '<p style="font-size:0.65rem;color:var(--muted);">No backups saved yet.</p>';
+        return;
+    }
+
+    area.innerHTML = '';
+
+    // Pinned first, then unpinned
+    [...pinned, ...unpinned].forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'backup-card' + (b.pinned ? ' pinned' : '');
+        card.innerHTML = `
+            <div class="backup-card-info">
+                <div class="backup-name">
+                    ${b.pinned ? '<span style="color:var(--amber);">&#128204;</span>' : ''}
+                    ${b.name}
+                </div>
+                <div class="backup-meta">
+                    ${new Date(b.timestamp).toLocaleString()} &nbsp;·&nbsp; ${b.linkCount} link${b.linkCount !== 1 ? 's' : ''}
+                </div>
+            </div>
+            <div class="backup-actions">
+                <button class="btn btn-primary btn-sm" onclick="loadBackup('${b.id}')">LOAD</button>
+                <button class="btn btn-outline btn-sm" onclick="renameBackup('${b.id}')">RENAME</button>
+                <button class="btn btn-outline btn-sm" style="border-color:rgba(230,138,0,0.5);color:var(--amber);" onclick="togglePin('${b.id}')">${b.pinned ? 'UNPIN' : 'PIN'}</button>
+                <button class="btn btn-outline btn-sm" style="border-color:rgba(255,68,68,0.4);color:var(--red);" onclick="deleteBackup('${b.id}')">DEL</button>
+            </div>
+        `;
+        area.appendChild(card);
+    });
+}
+
+/* ─── Utility ────────────────────────────────────────────────────── */
+
+function copyEl(elId, flashId) {
+    const text = document.getElementById(elId).textContent;
+    if (!text || text.startsWith('—')) return;
+    navigator.clipboard.writeText(text).then(() => {
+        const fl = document.getElementById(flashId);
+        if (fl) showFlash(fl, '✓ Copied to clipboard');
+    });
+}
+
+function showFlash(el, msg, isError = false) {
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('red', isError);
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+/* ─── Boot ───────────────────────────────────────────────────────── */
+window.onload = () => {
+    renderBackupLimit();
+    renderBackupList();
+    // Auto-load links.json on open
+    loadFromFile();
+};
+</script>
 </body>
-  </html>
-  
+</html>

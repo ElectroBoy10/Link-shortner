@@ -3,307 +3,885 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uplink Terminal v3.1</title>
+    <title>Uplink Terminal v5.0</title>
+
+    <!--
+    ============================================================
+      HEY, HELLO THERE 👋
+      found the source code huh? impressive. very sneaky.
+      config is in links.json — passwords are hashed though, gl.
+
+      if you're on devtools trying to snoop —
+      the redirect already fired. you're too late. go outside.
+
+      localStorage keys (since you're clearly looking):
+        uplink_visited_SHORTCODE  — one-time visit flag
+        uplink_admin_attempts     — wrong password counter
+        uplink_admin_locked       — "permanent" lockout flag
+        autoSkip                  — instant redirect preference
+    ============================================================
+    -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <style>
         :root {
-            --bg: #0a0a0a;
-            --card-bg: #111111;
-            --accent: #00ff41;
-            --border: #333;
-            --text: #e0e0e0;
+            --bg:       #0a0a0a;
+            --card-bg:  #111111;
+            --accent:   #00ff41;
+            --accent-d: #00aa2a;
+            --accent-g: rgba(0,255,65,0.12);
+            --border:   #333;
+            --text:     #e0e0e0;
+            --muted:    #666;
+            --amber:    #e68a00;
+            --red:      #ff4444;
         }
 
-        body { 
-            background-color: var(--bg); 
-            color: var(--text); 
-            font-family: 'Courier New', Courier, monospace; 
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            /* flex-start prevents tall panels being clipped on short phones */
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 16px 0;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .view-container { 
-            display: none; 
-            width: 100%; 
-            max-width: 450px; 
-            padding: 20px; 
-            flex-direction: column; 
-            animation: fadeIn 0.2s ease-out; 
+        .view-container {
+            display: none;
+            width: 100%;
+            max-width: 460px;
+            padding: 12px;
+            flex-direction: column;
+            animation: fadeIn 0.2s ease-out;
         }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @media (min-width: 500px) {
+            .view-container { padding: 20px; }
+        }
 
-        .brutalist-card { 
-            border: 2px solid var(--accent); 
-            background-color: var(--card-bg); 
-            padding: 1.5rem; 
-            box-shadow: 6px 6px 0px rgba(0, 255, 65, 0.2); 
-            box-sizing: border-box; 
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+        .brutalist-card {
+            border: 2px solid var(--accent);
+            background: var(--card-bg);
+            padding: 14px;
+            box-shadow: 4px 4px 0 rgba(0,255,65,0.2);
+            margin-bottom: 12px;
+        }
+
+        @media (min-width: 420px) {
+            .brutalist-card { padding: 1.5rem; box-shadow: 6px 6px 0 rgba(0,255,65,0.2); }
+        }
+
+        .brutalist-card.dashed { border-style: dashed; }
+        .brutalist-card.red    { border-color: var(--red);   box-shadow: 6px 6px 0 rgba(255,68,68,0.2); }
+        .brutalist-card.amber  { border-color: var(--amber); box-shadow: 6px 6px 0 rgba(230,138,0,0.2); }
+
+        .terminal-header {
+            border-bottom: 2px solid var(--accent);
             margin-bottom: 15px;
-        }
-
-        .terminal-header { 
-            border-bottom: 2px solid var(--accent); 
-            margin-bottom: 15px; 
-            padding-bottom: 8px; 
-            font-weight: bold; 
+            padding-bottom: 8px;
+            font-weight: bold;
             color: var(--accent);
             text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
         }
 
-        input, select { 
-            width: 100%; 
-            background: #000; 
-            border: 1px solid var(--border); 
-            color: var(--accent); 
-            padding: 10px; 
-            box-sizing: border-box; 
+        .terminal-header.red   { border-color: var(--red);   color: var(--red); }
+        .terminal-header.amber { border-color: var(--amber); color: var(--amber); }
+
+        input, select {
+            width: 100%;
+            background: #000;
+            border: 1px solid var(--border);
+            color: var(--accent);
+            padding: 12px;
+            box-sizing: border-box;
             outline: none;
             font-family: 'Courier New', monospace;
             margin-bottom: 10px;
+            /* 16px minimum prevents iOS auto-zoom on focus */
+            font-size: 16px;
+            border-radius: 0;
+            -webkit-appearance: none;
         }
 
-        .btn { 
-            width: 100%; 
-            padding: 12px; 
-            background: var(--accent); 
-            color: #000; 
-            border: none; 
-            font-weight: bold; 
-            cursor: pointer; 
+        input:focus, select:focus { border-color: var(--accent); }
+
+        .btn {
+            width: 100%;
+            padding: 14px 12px;
+            min-height: 48px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
             text-transform: uppercase;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            transition: background 0.15s;
+            display: block;
+            touch-action: manipulation;
         }
 
-        .btn:hover { background: #fff; }
+        .btn:hover  { background: #fff; }
+        .btn.amber  { background: var(--amber); color: #000; }
+        .btn.danger { background: var(--red);   color: #fff; }
+        .btn.outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+        .btn.outline:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+        .btn-sm { padding: 10px 14px; min-height: 44px; font-size: 0.72rem; width: auto; display: inline-flex; align-items: center; touch-action: manipulation; }
 
-        .countdown-num { font-size: 4rem; color: var(--accent); margin: 10px 0; text-align: center; }
-
+        .countdown-num { font-size: 4rem; color: var(--accent); margin: 10px 0; text-align: center; text-shadow: 0 0 20px rgba(0,255,65,0.5); }
         .loader-bar { width: 100%; height: 4px; background: #222; position: relative; overflow: hidden; }
         .loader-progress { width: 100%; height: 100%; background: var(--accent); position: absolute; left: -100%; }
+        .redirect-msg { font-size: 0.7rem; color: var(--muted); text-align: center; margin: 10px 0 4px; letter-spacing: 1px; text-transform: uppercase; }
+        .redirect-url-display { font-size: 0.6rem; color: #444; text-align: center; word-break: break-all; margin-bottom: 10px; }
 
         .skip-btn {
             background: transparent;
             border: 1px solid #444;
-            color: #666;
-            font-size: 0.6rem;
-            margin-top: 20px;
+            color: var(--muted);
+            font-size: 0.72rem;
+            margin-top: 8px;
             cursor: pointer;
-            padding: 5px;
+            padding: 13px 6px;
+            min-height: 44px;
+            width: 100%;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            transition: all 0.15s;
+            touch-action: manipulation;
         }
+
         .skip-btn:hover { color: var(--accent); border-color: var(--accent); }
 
-        .copy-hint { font-size: 0.7rem; color: var(--accent); margin-top: 5px; display: none; }
+        .badge { display: inline-block; font-size: 0.55rem; padding: 2px 6px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .badge-active   { background: rgba(0,255,65,0.1);   color: var(--accent); border: 1px solid var(--accent-d); }
+        .badge-expired  { background: rgba(255,68,68,0.1);  color: var(--red);    border: 1px solid rgba(255,68,68,0.4); }
+        .badge-locked   { background: rgba(230,138,0,0.1);  color: var(--amber);  border: 1px solid rgba(230,138,0,0.4); }
+        .badge-soon     { background: rgba(230,138,0,0.08); color: var(--amber);  border: 1px solid rgba(230,138,0,0.25); }
+        .badge-msg      { background: rgba(80,150,255,0.1); color: #5096ff;       border: 1px solid rgba(80,150,255,0.3); }
+        .badge-onetime  { background: rgba(160,80,255,0.1); color: #b070ff;       border: 1px solid rgba(160,80,255,0.3); }
+
+        .link-card { border: 1px solid var(--border); background: #0d0d0d; padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px; transition: border-color 0.15s; }
+        .link-card:hover { border-color: var(--accent-d); }
+        .link-card-info { flex: 1; min-width: 0; }
+        .link-shortcode { color: var(--accent); font-weight: bold; font-size: 0.85rem; margin-bottom: 3px; }
+        .link-dest { color: #555; font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
+        .link-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+        .link-expiry-label { font-size: 0.6rem; color: #555; }
+        .link-card-actions { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+        .link-list-scroll { max-height: 380px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; -webkit-overflow-scrolling: touch; }
+
+        /* Stack the ref+shortcode row on small screens */
+        @media (max-width: 420px) {
+            .gap-8 { flex-direction: column; gap: 0; }
+        }
+
+        /* Larger link card action buttons on mobile */
+        .link-card-actions .btn-sm { min-width: 56px; justify-content: center; }
+
+        .copy-output { background: #000; border: 1px dashed var(--accent); padding: 10px; font-size: 0.7rem; color: var(--accent); word-break: break-all; margin-top: 10px; min-height: 34px; cursor: pointer; transition: background 0.15s; }
+        .copy-output:hover { background: var(--accent-g); }
+        .copy-hint { font-size: 0.6rem; color: var(--accent); margin-top: 6px; display: none; letter-spacing: 1px; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal-box { background: var(--card-bg); border: 2px solid var(--accent); box-shadow: 6px 6px 0 rgba(0,255,65,0.2); padding: 20px 16px; text-align: center; max-width: 300px; width: 92vw; transform: scale(0.95); transition: transform 0.2s; }
+        .modal-overlay.open .modal-box { transform: scale(1); }
+        .modal-title { color: var(--accent); font-weight: bold; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        #qr-container { display: inline-block; background: #fff; padding: 12px; margin-bottom: 12px; }
+        .modal-url-label { font-size: 0.6rem; color: var(--muted); word-break: break-all; margin-bottom: 14px; }
+
+        .trace-block { background: #000; border: 1px solid var(--red); padding: 10px 12px; font-size: 0.65rem; color: var(--red); margin: 12px 0; line-height: 1.8; }
+        .trace-line { opacity: 0; transition: opacity 0.3s; }
+        .trace-line.visible { opacity: 1; }
+        @keyframes blink { 50% { opacity: 0; } }
+        .trace-cursor { display: inline-block; width: 7px; height: 12px; background: var(--red); animation: blink 1s step-end infinite; vertical-align: middle; margin-left: 3px; }
+
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+        .shake { animation: shake 0.4s ease; }
+
+        .attempt-dots { display: flex; gap: 6px; justify-content: center; margin: 10px 0; }
+        .attempt-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--border); background: transparent; transition: background 0.2s, border-color 0.2s; }
+        .attempt-dot.used { background: var(--red); border-color: var(--red); }
+
+        .state-icon   { font-size: 2.5rem; text-align: center; margin: 10px 0 8px; }
+        .state-title  { font-weight: bold; text-align: center; letter-spacing: 1px; font-size: 1rem; margin-bottom: 8px; }
+        .state-detail { color: var(--muted); font-size: 0.7rem; text-align: center; line-height: 1.7; margin-bottom: 14px; }
+
+        .label-small { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; display: block; }
+        .mt-10 { margin-top: 10px; }
+        .mt-16 { margin-top: 16px; }
+        .gap-8 { display: flex; gap: 8px; }
+
+        /* Loading spinner shown while fetching links.json */
+        .spinner {
+            width: 32px; height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="view-loading" class="view-container">
-        <div class="brutalist-card" style="text-align: center;">
-            <div class="terminal-header" style="text-align: left;">UPLINK_SEQUENCE</div>
-            <div class="countdown-num" id="countdown">5</div>
-            <div class="loader-bar"><div class="loader-progress" id="progress-bar"></div></div>
-            <button class="skip-btn" onclick="setAutoSkip()">[ ENABLE_AUTO_BYPASS ]</button>
+<!-- QR Modal -->
+<div class="modal-overlay" id="qr-modal" onclick="handleModalClick(event)">
+    <div class="modal-box">
+        <div class="modal-title">// QR_CODE_GENERATOR</div>
+        <div id="qr-container"></div>
+        <p class="modal-url-label" id="qr-url-label"></p>
+        <button class="btn outline" style="font-size:0.7rem;padding:8px;" onclick="closeQR()">[ CLOSE ]</button>
+    </div>
+</div>
+
+<!-- VIEW: Loading / fetching links.json -->
+<div id="view-boot" class="view-container">
+    <div class="brutalist-card" style="text-align:center;">
+        <div class="terminal-header">UPLINK_BOOT</div>
+        <div class="spinner"></div>
+        <p style="font-size:0.7rem; color:var(--muted); letter-spacing:1px;">LOADING REGISTRY...</p>
+    </div>
+</div>
+
+<!-- VIEW: Failed to load links.json -->
+<div id="view-load-error" class="view-container">
+    <div class="brutalist-card red">
+        <div class="terminal-header red">REGISTRY_FAULT</div>
+        <p class="state-title" style="color:var(--red);">FAILED TO LOAD CONFIG</p>
+        <p class="state-detail" id="load-error-detail">Could not fetch links.json.</p>
+        <p class="state-detail" style="font-size:0.6rem;">
+            Make sure links.json is in the same directory as index.html and the server allows file access.
+        </p>
+        <button class="btn outline" onclick="window.location.reload()">&#8635; RETRY</button>
+    </div>
+</div>
+
+<!-- VIEW: Countdown redirect -->
+<div id="view-loading" class="view-container">
+    <div class="brutalist-card" style="text-align:center;">
+        <div class="terminal-header">UPLINK_SEQUENCE</div>
+        <div class="countdown-num" id="countdown">5</div>
+        <div class="loader-bar"><div class="loader-progress" id="progress-bar"></div></div>
+        <div class="redirect-msg"         id="redirect-msg"></div>
+        <div class="redirect-url-display" id="redirect-url-display"></div>
+        <button class="skip-btn" onclick="skipCountdown()">[ SKIP_COUNTDOWN ]</button>
+        <button class="skip-btn" onclick="setAutoSkip()">[ ENABLE_AUTO_BYPASS ]</button>
+    </div>
+</div>
+
+<!-- VIEW: Operator login -->
+<div id="view-login" class="view-container">
+    <div class="brutalist-card">
+        <div class="terminal-header">AUTH_REQUIRED</div>
+        <input placeholder="OPERATOR_ID"  type="text"     id="adminUser">
+        <input placeholder="PASSWORD"     type="password" id="adminPass"
+               onkeydown="if(event.key==='Enter') attemptLogin()">
+        <div class="attempt-dots" id="attempt-dots">
+            <div class="attempt-dot" id="dot-1"></div>
+            <div class="attempt-dot" id="dot-2"></div>
+            <div class="attempt-dot" id="dot-3"></div>
+            <div class="attempt-dot" id="dot-4"></div>
+            <div class="attempt-dot" id="dot-5"></div>
+        </div>
+        <div id="login-warn" style="display:none;color:var(--amber);font-size:0.6rem;text-align:center;margin-bottom:8px;letter-spacing:1px;"></div>
+        <button class="btn" onclick="attemptLogin()">LOGIN</button>
+    </div>
+</div>
+
+<!-- VIEW: Admin lockout -->
+<div id="view-admin-locked" class="view-container">
+    <div class="brutalist-card red">
+        <div class="terminal-header red">ACCESS_TERMINATED</div>
+        <div class="trace-block">
+            <div class="trace-line" id="tl-1">&gt; BREACH_DETECTED: excessive auth failures</div>
+            <div class="trace-line" id="tl-2">&gt; LOGGING_INCIDENT: session fingerprinted</div>
+            <div class="trace-line" id="tl-3">&gt; UPLINK_PROTOCOL: terminal suspended</div>
+            <div class="trace-line" id="tl-4">&gt; OPERATOR_ALERT: notified &#10003;<span class="trace-cursor"></span></div>
+        </div>
+        <!-- totally a lie. no server. no logs. pure theatre. -->
+        <p class="state-detail" style="color:var(--red);font-size:0.65rem;">
+            This terminal has been locked due to repeated authentication failures.<br><br>
+            Incident has been logged and the operator has been notified.
+        </p>
+    </div>
+</div>
+
+<!-- VIEW: Locked link -->
+<div id="view-locked" class="view-container">
+    <div class="brutalist-card amber">
+        <div class="terminal-header amber">LOCKED_UPLINK</div>
+        <div class="state-icon" style="color:var(--amber);">&#128274;</div>
+        <p class="state-detail">This resource requires an access key before routing.</p>
+        <input id="linkPass" placeholder="ACCESS_KEY" type="password"
+               onkeydown="if(event.key==='Enter') checkLinkPassword()">
+        <button class="btn" onclick="checkLinkPassword()">DECRYPT</button>
+        <div id="lock-error" style="display:none;color:var(--red);font-size:0.65rem;margin-top:10px;text-align:center;">
+            &#9888; ACCESS_DENIED — INVALID KEY
         </div>
     </div>
+</div>
 
-    <div id="view-login" class="view-container">
-        <div class="brutalist-card">
-            <div class="terminal-header">AUTH_REQUIRED</div>
-            <input placeholder="OPERATOR_ID" type="text" id="adminUser">
-            <input id="adminPass" placeholder="PASSWORD" type="password">
-            <button class="btn" onclick="attemptLogin()">LOGIN</button>
+<!-- VIEW: One-time link claimed -->
+<div id="view-claimed" class="view-container">
+    <div class="brutalist-card red">
+        <div class="terminal-header red">LINK_CLAIMED</div>
+        <div class="trace-block">
+            <div class="trace-line" id="ct-1">&gt; VISITOR_RECORD: found in registry</div>
+            <div class="trace-line" id="ct-2">&gt; FIRST_ACCESS: <span id="ct-timestamp">–</span></div>
+            <div class="trace-line" id="ct-3">&gt; STATUS: single-use token expired<span class="trace-cursor"></span></div>
+        </div>
+        <p class="state-detail" style="color:var(--red);">
+            This link has already been used on this device.<br>Single-use tokens cannot be reissued.
+        </p>
+        <div id="claimed-reset-section" style="display:none;">
+            <p class="state-detail" style="font-size:0.6rem;color:var(--muted);margin-bottom:8px;">Operator override available.</p>
+            <input id="claimed-pass" placeholder="OPERATOR_KEY" type="password"
+                   onkeydown="if(event.key==='Enter') tryClaimReset()">
+            <button class="btn" onclick="tryClaimReset()">RESET CLAIM</button>
+            <div id="claimed-error" style="display:none;color:var(--red);font-size:0.65rem;margin-top:8px;text-align:center;">
+                &#9888; INVALID OVERRIDE KEY
+            </div>
         </div>
     </div>
+</div>
 
-    <div id="view-locked" class="view-container">
-        <div class="brutalist-card">
-            <div class="terminal-header">LOCKED_UPLINK</div>
-            <input id="linkPass" placeholder="ACCESS_KEY" type="password">
-            <button class="btn" onclick="checkLinkPassword()">DECRYPT</button>
-        </div>
+<!-- VIEW: Expired -->
+<div id="view-expired" class="view-container">
+    <div class="brutalist-card red">
+        <div class="terminal-header red">LINK_TERMINATED</div>
+        <div class="state-icon" style="color:var(--red);">&#9888;</div>
+        <p class="state-title" style="color:var(--red);">SIGNAL_DEAD</p>
+        <p class="state-detail" id="expired-detail">This shortcode has passed its expiry date.</p>
+        <p class="state-detail" style="font-size:0.6rem;">If you believe this is an error, contact the link operator.</p>
     </div>
+</div>
 
-    <div id="view-admin" class="view-container">
-        <div class="terminal-header">LINK_CONSTRUCTOR</div>
-        <div class="brutalist-card" style="border-style: dashed;">
-            <input type="text" id="customRef" placeholder="Referral (e.g. TikTok)">
-            <select id="redirectMode">
+<!-- VIEW: 404 -->
+<div id="view-404" class="view-container">
+    <div class="brutalist-card red">
+        <div class="terminal-header red">ERROR_404</div>
+        <div class="trace-block">
+            &gt; REGISTRY_QUERY: "<span id="err404-code">?</span>"<br>
+            &gt; RESULT: no records found<br>
+            &gt; UPLINK_STATUS: unresolvable<span class="trace-cursor"></span>
+        </div>
+        <p class="state-title" style="color:var(--red);">CODE_NOT_FOUND</p>
+        <p class="state-detail">The shortcode "<span id="err404-code-2" style="color:var(--text);">?</span>" does not exist in this registry.</p>
+        <p class="state-detail" style="font-size:0.6rem;">Double-check the URL or contact whoever sent you here.</p>
+        <button class="btn outline" style="margin-top:6px;" onclick="window.location.search=''">&#8592; RETURN</button>
+    </div>
+</div>
+
+<!-- VIEW: Generic error -->
+<div id="view-error" class="view-container">
+    <div class="brutalist-card red">
+        <div class="terminal-header red">SYSTEM_ERROR</div>
+        <p class="state-title" style="color:var(--red);">UNEXPECTED_FAULT</p>
+        <p class="state-detail" id="error-detail">An unexpected error occurred.</p>
+        <button class="btn outline" style="margin-top:6px;" onclick="window.location.reload()">&#8635; RELOAD</button>
+    </div>
+</div>
+
+<!-- VIEW: Admin panel -->
+<div id="view-admin" class="view-container" style="max-width:520px;">
+    <div class="terminal-header">LINK_CONSTRUCTOR</div>
+    <div class="brutalist-card dashed">
+        <span class="label-small">Build Query String</span>
+        <div class="gap-8">
+            <div style="flex:1;">
+                <span class="label-small">Referral Tag</span>
+                <input type="text" id="customRef" placeholder="e.g. TikTok" oninput="updateCopyOutput()" style="margin-bottom:0;">
+            </div>
+            <div style="flex:1;">
+                <span class="label-small">Shortcode</span>
+                <input type="text" id="customId" placeholder="e.g. Kynto" oninput="updateCopyOutput()" style="margin-bottom:0;">
+            </div>
+        </div>
+        <div class="mt-10">
+            <select id="redirectMode" oninput="updateCopyOutput()" style="margin-bottom:0;">
                 <option value="timed">Timed (5s)</option>
                 <option value="direct">Direct (Instant)</option>
             </select>
-            <p style="font-size: 0.6rem; color: #888;">Select a link below to copy with these settings.</p>
         </div>
-        <div id="admin-list"></div>
-        <button class="btn" onclick="clearAutoSkip()" style="background: #e68a00; margin-top: 20px; margin-bottom: 10px;">RESET_BYPASS_STATE</button>
-        <button class="btn" onclick="location.reload()" style="background: #ff4444;">LOGOUT</button>
+        <div class="copy-output" id="copy-output" onclick="copyOutput()" title="Click to copy">
+            <span style="color:#444;font-size:0.65rem;">— enter a shortcode above —</span>
+        </div>
+        <div class="copy-hint" id="copy-hint">&#10003; COPIED_TO_CLIPBOARD</div>
     </div>
 
-    <div id="view-404" class="view-container">
-        <div class="brutalist-card">
-            <div class="terminal-header">ERROR_404</div>
-            <p>SIGNAL_LOST: CODE_INVALID</p>
-            <button class="btn" onclick="window.location.search=''">RETRY</button>
-        </div>
+    <div style="color:var(--accent);font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">REGISTERED_LINKS</div>
+    <div class="link-list-scroll" id="admin-list"></div>
+
+    <div class="brutalist-card dashed" style="margin-top:10px;">
+        <div class="terminal-header" style="font-size:0.75rem;">RESET ONE-TIME CLAIM</div>
+        <span class="label-small">Shortcode to reset</span>
+        <input type="text" id="reset-claim-input" placeholder="e.g. BUa8b2" style="margin-bottom:8px;">
+        <button class="btn outline btn-sm" style="width:100%;" onclick="adminClearClaim()">CLEAR CLAIM FLAG</button>
+        <div id="reset-claim-msg" style="display:none;font-size:0.6rem;margin-top:6px;text-align:center;"></div>
     </div>
 
-    <script>
-        //----------------------------------------------------------------------
-        const G_CONFIG = {
-            settings: {
-                salt: "my_secret_salt_123",
-                masterHash: "dc02833e8dba6d393d3f38f678612bbd688aacd85a98afbc95481c352dfefe02",
-                hookA: "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQxMDQ3NTA1NjY4NDk5MDYzNS9KcDFMeFBy", 
-                hookB: "ZV9GVHlMUU9fVnFNa0piRGw5cWtxdXRZVC1mYTQ5T1FRLXlzNXdjVkhGbllsSEdrdVB3QTBIZjY1RHpveg=="
-            },
-            links: {
-                'BUa8b2': { url: 'https://imgur.com/a/hCeI6rz', locked: false },
-                'Kynto': { url: 'https://discord.gg/K58KvmwftD', locked: false },
-                'Voltsim': { url: 'https://discord.gg/AC8MhtVfF6', locked: false },
-                'PwTest': { url: 'https://dummyimage.com/600x400/000/fff.png&text=Pw+Test', locked: true, hash: '74a7b26e07efe4547ffa4bc907df05d141cc6e4e5671c51afea958eda3b13ad9' }
-            }
-        };
-        //----------------------------------------------------------------------
+    <button class="btn amber mt-10" onclick="clearAutoSkip()">RESET_BYPASS_STATE</button>
+    <button class="btn danger mt-10" onclick="location.reload()">LOGOUT</button>
+</div>
 
-        let activeLinkId = null;
-        let activeLinkData = null;
+<script>
+/*
+    if you got this far without using the app — impressive commitment.
+    the config is in links.json. the admin password hash is in there too.
+    good luck with it. seriously though, go outside.
+*/
 
-        async function getHash(input) {
-            const step1 = btoa(input + G_CONFIG.settings.salt);
-            const step2 = btoa(step1);
-            const msgBuffer = new TextEncoder().encode(step2);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+/* ─── Runtime state ──────────────────────────────────────────────── */
+let G_CONFIG       = null;   // Populated after links.json is fetched
+let activeLinkId   = null;
+let activeLinkData = null;
+let _skipUrl       = '';
+
+/* ─── localStorage keys ──────────────────────────────────────────── */
+const LS_VISITED  = id => `uplink_visited_${id}`;
+const LS_ATTEMPTS = () => 'uplink_admin_attempts';
+const LS_LOCKED   = () => 'uplink_admin_locked';
+
+/* ─── Boot: fetch links.json ─────────────────────────────────────── */
+
+/**
+ * Fetches links.json from the same directory as this page.
+ * Shows a spinner while loading so it never looks broken.
+ * Hard-fails with a clear error screen if the file is missing or malformed.
+ */
+async function boot() {
+    showView('view-boot');
+    try {
+        // Relative path — works on GitHub Pages, Netlify, and local server
+        const res = await fetch('./links.json');
+
+        if (!res.ok) {
+            // HTTP error (404, 403, etc.) — very common if file is missing
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
 
-        async function router() {
-            const params = new URLSearchParams(window.location.search);
-            activeLinkId = params.get('id');
-            const ref = params.get('ref') || 'None';
-            const mode = params.get('mode') || 'timed';
+        G_CONFIG = await res.json();
 
-            if (activeLinkId) {
-                activeLinkData = G_CONFIG.links[activeLinkId];
-                if (activeLinkData) {
-                    await logHit(activeLinkId, activeLinkData.url, ref, mode);
-                    if (activeLinkData.locked) {
-                        showView('view-locked');
-                    } else {
-                        handleRedirect(activeLinkData.url, mode);
-                    }
-                } else { showView('view-404'); }
-            } else { showView('view-login'); }
+        // Validate the minimum required structure before proceeding
+        if (!G_CONFIG.settings || !G_CONFIG.links) {
+            throw new Error('links.json is missing required "settings" or "links" keys.');
         }
 
-        function handleRedirect(url, mode) {
-            const isAutoSkip = localStorage.getItem('autoSkip') === 'true';
-            if (mode === 'direct' || isAutoSkip) {
-                window.location.href = url;
-            } else {
-                startCountdown(url);
-            }
+        // Config loaded — hand off to the router
+        router();
+
+    } catch (err) {
+        document.getElementById('load-error-detail').textContent = `Error: ${err.message}`;
+        showView('view-load-error');
+    }
+}
+
+/* ─── Hashing ────────────────────────────────────────────────────── */
+
+/** Single-salt hash: btoa(input + salt) → btoa() → SHA-256 hex */
+async function hashWithSalt(input, salt) {
+    const step1     = btoa(input + salt);
+    const step2     = btoa(step1);
+    const msgBuffer = new TextEncoder().encode(step2);
+    const hashBuf   = await crypto.subtle.digest('SHA-256', msgBuffer);
+    return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Try every salt in G_CONFIG.settings.salts.
+ * Returns true the moment any salt produces a matching hash.
+ * This means entries never need to store which salt was used.
+ */
+async function matchesAnyHash(input, targetHash) {
+    for (const salt of G_CONFIG.settings.salts) {
+        if (await hashWithSalt(input, salt) === targetHash) return true;
+    }
+    return false;
+}
+
+/* ─── View management ────────────────────────────────────────────── */
+
+function showView(id) {
+    document.querySelectorAll('.view-container').forEach(v => v.style.display = 'none');
+    document.getElementById(id).style.display = 'flex';
+}
+
+function showError(msg) {
+    document.getElementById('error-detail').textContent = msg;
+    showView('view-error');
+}
+
+/* ─── Expiry helpers ─────────────────────────────────────────────── */
+
+function isExpired(link) {
+    if (!link.expires) return false;
+    return new Date(link.expires + 'T23:59:59') < new Date();
+}
+
+function daysUntilExpiry(link) {
+    if (!link.expires) return null;
+    return Math.ceil((new Date(link.expires + 'T23:59:59') - new Date()) / 86400000);
+}
+
+/* ─── One-time visit helpers ─────────────────────────────────────── */
+
+function hasVisited(id)  { return localStorage.getItem(LS_VISITED(id)) !== null; }
+function markVisited(id) { localStorage.setItem(LS_VISITED(id), new Date().toISOString()); }
+function clearVisit(id)  { localStorage.removeItem(LS_VISITED(id)); }
+
+/* ─── Fake trace animation ───────────────────────────────────────── */
+
+/** Stagger trace lines in — purely cosmetic, purely terrifying on mobile */
+function runTraceAnimation(prefix, count, delay = 400) {
+    for (let i = 1; i <= count; i++) {
+        const el = document.getElementById(`${prefix}${i}`);
+        if (el) setTimeout(() => el.classList.add('visible'), i * delay);
+    }
+}
+
+/* ─── Router ─────────────────────────────────────────────────────── */
+
+async function router() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        activeLinkId = params.get('id');
+        const ref    = params.get('ref')  || 'None';
+        const mode   = params.get('mode') || 'timed';
+
+        if (!activeLinkId) { initLoginView(); return; }
+
+        activeLinkData = G_CONFIG.links[activeLinkId];
+
+        if (!activeLinkData) {
+            document.getElementById('err404-code').textContent   = activeLinkId;
+            document.getElementById('err404-code-2').textContent = activeLinkId;
+            showView('view-404');
+            return;
         }
 
-        function setAutoSkip() {
-            localStorage.setItem('autoSkip', 'true');
-            alert("AUTO_BYPASS_ENABLED: Future links will redirect instantly.");
+        if (isExpired(activeLinkData)) {
+            document.getElementById('expired-detail').textContent =
+                `Shortcode "${activeLinkId}" expired on ${activeLinkData.expires} and is no longer active.`;
+            showView('view-expired');
+            return;
         }
 
-        function clearAutoSkip() {
-            localStorage.removeItem('autoSkip');
-            alert("AUTO_BYPASS_DISABLED: Redirect timer restored.");
+        if (activeLinkData.oneTime && hasVisited(activeLinkId)) {
+            showClaimedView();
+            return;
         }
 
-        function startCountdown(targetUrl) {
-            showView('view-loading');
-            let count = 5;
-            const timerText = document.getElementById('countdown');
-            const progress = document.getElementById('progress-bar');
-            progress.style.transition = "left 5s linear";
-            progress.style.left = "0%";
-            const interval = setInterval(() => {
-                count--;
-                timerText.innerText = count;
-                if (count <= 0) {
-                    clearInterval(interval);
-                    window.location.href = targetUrl;
-                }
-            }, 1000);
+        // Fire webhook hit — never blocks redirect
+        logHit(activeLinkId, activeLinkData.url, ref, mode);
+
+        if (activeLinkData.locked) {
+            showView('view-locked');
+            document.getElementById('linkPass').focus();
+            return;
         }
 
-        async function checkLinkPassword() {
-            const p = document.getElementById('linkPass').value;
-            const mode = new URLSearchParams(window.location.search).get('mode') || 'timed';
-            if (await getHash(p) === activeLinkData.hash) {
-                handleRedirect(activeLinkData.url, mode);
-            } else { alert("ACCESS_DENIED"); showView('view-404'); }
-        }
+        handleRedirect(activeLinkData.url, mode, activeLinkData.message);
 
-        async function logHit(id, url, ref, mode) {
-            const hook = atob(G_CONFIG.settings.hookA) + atob(G_CONFIG.settings.hookB);
-            let ip = "N/A";
-            try { const res = await fetch('https://api.ipify.org?format=json'); ip = (await res.json()).ip; } catch(e) {}
-            const payload = {
+    } catch (err) {
+        showError(`Routing fault: ${err.message}`);
+    }
+}
+
+/* ─── Redirect flow ──────────────────────────────────────────────── */
+
+function handleRedirect(url, mode, message) {
+    const autoSkip = localStorage.getItem('autoSkip') === 'true';
+    if (mode === 'direct' || autoSkip) {
+        if (activeLinkData?.oneTime) markVisited(activeLinkId);
+        window.location.href = url;
+    } else {
+        startCountdown(url, message);
+    }
+}
+
+function startCountdown(targetUrl, message) {
+    _skipUrl = targetUrl;
+    showView('view-loading');
+    document.getElementById('redirect-msg').textContent         = message || 'INITIALIZING_UPLINK_SEQUENCE...';
+    document.getElementById('redirect-url-display').textContent = targetUrl;
+
+    let count = 5;
+    const timerEl = document.getElementById('countdown');
+    const bar     = document.getElementById('progress-bar');
+    timerEl.textContent  = count;
+    bar.style.transition = 'left 5s linear';
+    bar.style.left       = '0%';
+
+    const interval = setInterval(() => {
+        count--;
+        timerEl.textContent = count;
+        if (count <= 0) {
+            clearInterval(interval);
+            if (activeLinkData?.oneTime) markVisited(activeLinkId);
+            window.location.href = targetUrl;
+        }
+    }, 1000);
+}
+
+function skipCountdown() {
+    if (activeLinkData?.oneTime) markVisited(activeLinkId);
+    if (_skipUrl) window.location.href = _skipUrl;
+}
+
+function setAutoSkip()   { localStorage.setItem('autoSkip', 'true');  alert('AUTO_BYPASS_ENABLED: Future links will redirect instantly.'); }
+function clearAutoSkip() { localStorage.removeItem('autoSkip');        alert('AUTO_BYPASS_DISABLED: Redirect timer restored.'); }
+
+/* ─── Claimed view ───────────────────────────────────────────────── */
+
+function showClaimedView() {
+    const stamp = localStorage.getItem(LS_VISITED(activeLinkId));
+    if (stamp) {
+        try { document.getElementById('ct-timestamp').textContent = new Date(stamp).toLocaleString(); } catch (_) {}
+    }
+    if (activeLinkData.oneTimePass) document.getElementById('claimed-reset-section').style.display = 'block';
+    showView('view-claimed');
+    runTraceAnimation('ct-', 3, 350);
+}
+
+async function tryClaimReset() {
+    const input = document.getElementById('claimed-pass').value;
+    if (!input) return;
+    if (await matchesAnyHash(input, activeLinkData.oneTimePass)) {
+        clearVisit(activeLinkId);
+        router();
+    } else {
+        const err = document.getElementById('claimed-error');
+        err.style.display = 'block';
+        document.getElementById('claimed-pass').value = '';
+        setTimeout(() => err.style.display = 'none', 2500);
+    }
+}
+
+/* ─── Locked link ────────────────────────────────────────────────── */
+
+async function checkLinkPassword() {
+    const input = document.getElementById('linkPass').value;
+    if (!input) return;
+    const mode = new URLSearchParams(window.location.search).get('mode') || 'timed';
+
+    // Try every salt in the table — whichever was used at generation will match
+    if (await matchesAnyHash(input, activeLinkData.hash)) {
+        handleRedirect(activeLinkData.url, mode, activeLinkData.message);
+    } else {
+        const err = document.getElementById('lock-error');
+        err.style.display = 'block';
+        document.getElementById('linkPass').value = '';
+        document.getElementById('linkPass').focus();
+        setTimeout(() => err.style.display = 'none', 2500);
+    }
+}
+
+/* ─── Webhook logging ────────────────────────────────────────────── */
+
+async function logHit(id, url, ref, mode) {
+    try {
+        const hook = atob(G_CONFIG.settings.hookA) + atob(G_CONFIG.settings.hookB);
+        let ip = 'N/A';
+        try { const r = await fetch('https://api.ipify.org?format=json'); ip = (await r.json()).ip; } catch (_) {}
+
+        // Fire-and-forget — never blocks the redirect
+        fetch(hook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 embeds: [{
-                    title: "🛰️ UPLINK_HIT",
+                    title: '🛰️ UPLINK_HIT',
                     color: 65280,
                     fields: [
-                        { name: "ID", value: id, inline: true },
-                        { name: "REF", value: ref, inline: true },
-                        { name: "MODE", value: mode, inline: true },
-                        { name: "IP", value: ip },
-                        { name: "URL", value: url }
+                        { name: 'ID',      value: id,   inline: true },
+                        { name: 'REF',     value: ref,  inline: true },
+                        { name: 'MODE',    value: mode, inline: true },
+                        { name: 'IP',      value: ip },
+                        { name: 'URL',     value: url },
+                        { name: 'ONE_TIME', value: String(!!activeLinkData?.oneTime), inline: true },
                     ],
-                    timestamp: new Date().toISOString()
-                }]
-            };
-            fetch(hook, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
-        }
+                    timestamp: new Date().toISOString(),
+                }],
+            }),
+        });
+    } catch (_) {} // webhook failures are always non-fatal
+}
 
-        function showView(id) {
-            document.querySelectorAll('.view-container').forEach(v => v.style.display = 'none');
-            document.getElementById(id).style.display = 'flex';
-        }
+/* ─── Admin login + lockout ──────────────────────────────────────── */
 
-        async function attemptLogin() {
-            if (await getHash(document.getElementById('adminPass').value) === G_CONFIG.settings.masterHash) {
-                renderAdmin();
-                showView('view-admin');
-            } else { alert("AUTH_ERR"); }
-        }
+function initLoginView() {
+    if (localStorage.getItem(LS_LOCKED()) === 'true') {
+        showView('view-admin-locked');
+        runTraceAnimation('tl-', 4, 500);
+        return;
+    }
+    const attempts = parseInt(localStorage.getItem(LS_ATTEMPTS()) || '0');
+    updateAttemptDots(attempts);
+    showView('view-login');
+    document.getElementById('adminPass').focus();
+}
 
-        function renderAdmin() {
-            const list = document.getElementById('admin-list');
-            list.innerHTML = '';
-            for (const [id, data] of Object.entries(G_CONFIG.links)) {
-                const card = document.createElement('div');
-                card.className = 'brutalist-card';
-                card.innerHTML = `
-                    <div style="color: var(--accent); font-size: 0.8rem;">#${id}</div>
-                    <button class="btn" style="padding: 5px; font-size: 0.6rem; margin-top:10px;" onclick="copyUplink('${id}')">COPY_EXTENSION</button>
-                    <div id="hint-${id}" class="copy-hint">COPIED_TO_CLIPBOARD</div>
-                `;
-                list.appendChild(card);
-            }
-        }
+function updateAttemptDots(count) {
+    for (let i = 1; i <= 5; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        if (dot) dot.classList.toggle('used', i <= count);
+    }
+    const warn      = document.getElementById('login-warn');
+    const remaining = G_CONFIG.settings.maxAdminAttempts - count;
+    if (count > 0 && count < G_CONFIG.settings.maxAdminAttempts) {
+        warn.textContent = `${remaining} attempt${remaining === 1 ? '' : 's'} remaining before lockout`;
+        warn.style.display = 'block';
+    } else {
+        warn.style.display = 'none';
+    }
+}
 
-        function copyUplink(id) {
-            const ref = document.getElementById('customRef').value || 'None';
-            const mode = document.getElementById('redirectMode').value;
-            const str = `?id=${id}&ref=${ref}&mode=${mode}`;
-            
-            navigator.clipboard.writeText(str).then(() => {
-                const hint = document.getElementById(`hint-${id}`);
-                hint.style.display = 'block';
-                setTimeout(() => hint.style.display = 'none', 2000);
-                
-                document.getElementById('customRef').value = '';
-                document.getElementById('redirectMode').value = 'timed';
-            });
-        }
+async function attemptLogin() {
+    if (localStorage.getItem(LS_LOCKED()) === 'true') {
+        showView('view-admin-locked');
+        runTraceAnimation('tl-', 4, 500);
+        return;
+    }
 
-        window.onload = router;
-    </script>
+    const pass = document.getElementById('adminPass').value;
+    if (!pass) return;
+
+    if (await matchesAnyHash(pass, G_CONFIG.settings.masterHash)) {
+        localStorage.removeItem(LS_ATTEMPTS());
+        updateAttemptDots(0);
+        renderAdmin();
+        showView('view-admin');
+    } else {
+        const attempts = parseInt(localStorage.getItem(LS_ATTEMPTS()) || '0') + 1;
+        localStorage.setItem(LS_ATTEMPTS(), String(attempts));
+        updateAttemptDots(attempts);
+
+        const card = document.querySelector('#view-login .brutalist-card');
+        card.classList.remove('shake');
+        void card.offsetWidth;
+        card.classList.add('shake');
+
+        document.getElementById('adminPass').value = '';
+        document.getElementById('adminPass').focus();
+
+        if (attempts >= G_CONFIG.settings.maxAdminAttempts) {
+            localStorage.setItem(LS_LOCKED(), 'true');
+            // Small delay so the last shake completes before the screen changes
+            setTimeout(() => { showView('view-admin-locked'); runTraceAnimation('tl-', 4, 500); }, 600);
+        }
+    }
+}
+
+/* ─── Admin panel ────────────────────────────────────────────────── */
+
+function renderAdmin() {
+    const list = document.getElementById('admin-list');
+    list.innerHTML = '';
+
+    for (const [id, data] of Object.entries(G_CONFIG.links)) {
+        const expired = isExpired(data);
+        const days    = daysUntilExpiry(data);
+        const claimed = data.oneTime && hasVisited(id);
+
+        let badge = '<span class="badge badge-active">ACTIVE</span>';
+        if (expired)       badge = '<span class="badge badge-expired">EXPIRED</span>';
+        else if (claimed)  badge = '<span class="badge badge-onetime">CLAIMED</span>';
+        else if (data.locked) badge = '<span class="badge badge-locked">LOCKED</span>';
+        else if (days !== null && days <= 7) badge = `<span class="badge badge-soon">EXPIRES ${days}d</span>`;
+        else if (data.oneTime) badge = '<span class="badge badge-onetime">ONE-TIME</span>';
+
+        const expiryLabel = data.expires ? `<span class="link-expiry-label">&#128197; ${data.expires}</span>` : '';
+        const msgBadge    = data.message ? '<span class="badge badge-msg">MSG</span>' : '';
+
+        const card = document.createElement('div');
+        card.className = 'link-card';
+        card.innerHTML = `
+            <div class="link-card-info">
+                <div class="link-shortcode">#${id}</div>
+                <div class="link-dest">${data.url}</div>
+                <div class="link-meta">${badge} ${expiryLabel} ${msgBadge}</div>
+            </div>
+            <div class="link-card-actions">
+                <button class="btn btn-sm" onclick="quickFill('${id}')">COPY</button>
+                <button class="btn btn-sm outline" onclick="openQR('${id}')">QR</button>
+            </div>
+        `;
+        list.appendChild(card);
+    }
+}
+
+function quickFill(id) {
+    document.getElementById('customId').value = id;
+    updateCopyOutput();
+    document.getElementById('customRef').focus();
+}
+
+function updateCopyOutput() {
+    const id   = document.getElementById('customId').value.trim();
+    const ref  = document.getElementById('customRef').value.trim();
+    const mode = document.getElementById('redirectMode').value;
+    const out  = document.getElementById('copy-output');
+    if (!id) { out.innerHTML = '<span style="color:#444;font-size:0.65rem;">— enter a shortcode above —</span>'; return; }
+    const params = new URLSearchParams({ id, ...(ref && { ref }), mode });
+    out.textContent = `${window.location.pathname}?${params.toString()}`;
+}
+
+function copyOutput() {
+    const text = document.getElementById('copy-output').textContent;
+    if (!text || text.startsWith('—')) return;
+    navigator.clipboard.writeText(text).then(() => {
+        const hint = document.getElementById('copy-hint');
+        hint.style.display = 'block';
+        setTimeout(() => hint.style.display = 'none', 2000);
+    });
+}
+
+function adminClearClaim() {
+    const id  = document.getElementById('reset-claim-input').value.trim();
+    const msg = document.getElementById('reset-claim-msg');
+    if (!id) { msg.textContent = '⚠ Enter a shortcode first.'; msg.style.color = 'var(--red)'; msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 2000); return; }
+    if (!G_CONFIG.links[id]) { msg.textContent = `⚠ "${id}" not found.`; msg.style.color = 'var(--red)'; msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 2500); return; }
+    clearVisit(id);
+    document.getElementById('reset-claim-input').value = '';
+    msg.textContent = `✓ Claim cleared for "${id}".`;
+    msg.style.color = 'var(--accent)';
+    msg.style.display = 'block';
+    setTimeout(() => { msg.style.display = 'none'; renderAdmin(); }, 2000);
+}
+
+/* ─── QR Modal ───────────────────────────────────────────────────── */
+
+function openQR(id) {
+    const mode   = document.getElementById('redirectMode')?.value || 'timed';
+    const params = new URLSearchParams({ id, mode });
+    const url    = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+    document.getElementById('qr-url-label').textContent = url;
+    const container = document.getElementById('qr-container');
+    container.innerHTML = '';
+    new QRCode(container, { text: url, width: 180, height: 180, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.H });
+    document.getElementById('qr-modal').classList.add('open');
+}
+
+function handleModalClick(e) { if (e.target === document.getElementById('qr-modal')) closeQR(); }
+function closeQR() { document.getElementById('qr-modal').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQR(); });
+
+/* ─── Boot ───────────────────────────────────────────────────────── */
+window.onload = boot;
+</script>
 </body>
 </html>

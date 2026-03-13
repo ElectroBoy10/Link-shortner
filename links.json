@@ -1,0 +1,63 @@
+{
+  "settings": {
+    "salts": [
+      "my_secret_salt_123"
+    ],
+    "masterHash": "dc02833e8dba6d393d3f38f678612bbd688aacd85a98afbc95481c352dfefe02",
+    "hookA": "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQxMDQ3NTA1NjY4NDk5MDYzNS9KcDFMeFBy",
+    "hookB": "ZV9GVHlMUU9fVnFNa0piRGw5cWtxdXRZVC1mYTQ5T1FRLXlzNXdjVkhGbllsSEdrdVB3QTBIZjY1RHpveg==",
+    "maxAdminAttempts": 5
+  },
+  "links": {
+    "BUa8b2": {
+      "url": "https://imgur.com/a/hCeI6rz",
+      "locked": false,
+      "expires": null,
+      "message": null,
+      "oneTime": false
+    },
+    "Kynto": {
+      "url": "https://discord.gg/K58KvmwftD",
+      "locked": false,
+      "expires": null,
+      "message": "Establishing Discord relay...",
+      "oneTime": false
+    },
+    "Voltsim": {
+      "url": "https://discord.gg/AC8MhtVfF6",
+      "locked": false,
+      "expires": null,
+      "message": "Establishing Discord relay...",
+      "oneTime": false
+    },
+    "PwTest": {
+      "url": "https://dummyimage.com/600x400/000/fff.png&text=Pw+Test",
+      "locked": true,
+      "hash": "74a7b26e07efe4547ffa4bc907df05d141cc6e4e5671c51afea958eda3b13ad9",
+      "expires": null,
+      "message": "Decrypting secure channel...",
+      "oneTime": false
+    },
+    "TEST_basic": {
+      "url": "https://example.com",
+      "locked": false,
+      "expires": null,
+      "message": "Routing to test destination...",
+      "oneTime": false
+    },
+    "TEST_expiry": {
+      "url": "https://example.com/expired-test",
+      "locked": false,
+      "expires": "2024-01-01",
+      "message": null,
+      "oneTime": false
+    },
+    "TEST_onetime": {
+      "url": "https://example.com/one-time-test",
+      "locked": false,
+      "expires": null,
+      "message": "Single-use link activating...",
+      "oneTime": true
+    }
+  }
+}

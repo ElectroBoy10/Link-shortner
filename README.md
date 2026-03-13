@@ -1,109 +1,300 @@
-# Link-shortner
+# UPLINK TERMINAL
 
-A minimal static link shortener / redirect helper with a retro "uplink terminal" UI. This is a client-side, single-file HTML app that runs in the browser and is meant for personal, small-scale use.
+> A client-side link shortener with a retro terminal UI. No backend. No database. Three files.
 
-Important: this project is NOT offline-first. It requires network access for:
-- Redirecting to external target URLs (the entire purpose of the app).
-- Reporting hits to a configured Discord webhook (if configured).
-- Optional IP lookup (uses ipify) when sending webhook payloads.
+Runs entirely in the browser — deploy anywhere static files are served: GitHub Pages, Netlify, Vercel, Cloudflare Pages, or just open locally.
 
-Do not use this for production or to protect sensitive resources — see Security below.
+---
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `index.html` | The shortener — fetches `links.json` and handles all redirects |
+| `links.json` | Your config — all links, settings, salts, and webhook data |
+| `Ls-Pw-Gen.html` | Management dashboard — edit links, manage backups, generate hashes |
+
+**Important:** `index.html` and `Ls-Pw-Gen.html` must be in the same directory as `links.json`. All three files are required.
+
+---
+
+## Quick Start
+
+1. Clone or download this repo
+2. Push all three files to GitHub and enable Pages, or drop them on Netlify/Vercel
+3. Visit `index.html` with no parameters to reach the operator login
+4. Use a URL like `index.html?id=Kynto&ref=Twitter&mode=timed` to trigger a redirect
+
+> **Local testing:** opening `index.html` directly as a `file://` URL will fail to fetch `links.json` due to browser CORS restrictions. Use a local server instead — `npx serve .` or the VS Code Live Server extension both work.
+
+---
 
 ## Features
-- Shortcode-based links (e.g. `?id=ShortCode1`)
-- Timed redirect (5s countdown) or direct (instant) redirect
-- Admin panel (client-side password) to copy query-string extensions with custom ref and mode
-- Locked links option (client-side password check using client-side hash)
-- Optional webhook "analytics" that posts hits to a Discord webhook (reconstructs webhook from two base64 parts)
-- Small single-file HTML app — no backend required, but network access is needed for redirects/webhook/ip lookup
 
-## Quick start (run locally)
-1. Clone or download this repo.
-2. Open `index.html` in your browser or serve the folder with any static server.
-3. Use the query string in the address bar to open a shortcode, for example:
-   - Timed (default): `index.html?id=BUa8b2&ref=MyRef&mode=timed`
-   - Direct: `index.html?id=BUa8b2&ref=MyRef&mode=direct`
+- **Shortcode redirects** — clean `?id=ShortCode` URLs
+- **Timed (5s countdown) or instant redirect modes**
+- **Auto-bypass** — users can opt into instant redirects for all future visits
+- **Locked links** — password-gate any link before it routes
+- **One-time visit links** — blocks after first use per browser with optional operator override
+- **Link expiry dates** — auto-deactivate after a set date
+- **Custom redirect messages** — per-link text shown during the countdown
+- **Discord webhook analytics** — hit reports posted to a Discord channel
+- **Admin panel** — login, query string builder, QR code generator, claim reset
+- **Admin lockout** — 5 wrong passwords locks the terminal in that browser with a fake trace animation
+- **Multi-salt system** — add as many salts as you like; the app tries all of them on every hash check so you never need to track which salt belongs to which entry
+- **Bypasses redirect tracking** — redirect fires via `window.location.href` in the browser, not a server-side HTTP 301/302, so most referral scrapers never see the hop
 
-## URL parameters
-- id — The shortcode key from the `G_CONFIG.links` object.
-- ref — Optional referral/string (used for your tracking).
-- mode — `timed` (5s countdown) or `direct` (immediate redirect).
+---
 
-Example:
-`index.html?id=Kynto&ref=TikTok&mode=direct`
+## URL Parameters
 
-## Admin panel
-- Open `index.html` without query parameters to see the login screen.
-- Enter the operator password. The app compares a client-side SHA-256-style hash against `G_CONFIG.settings.masterHash`.
-- After login you can copy query strings pre-filled with your chosen `ref` and `mode`.
+| Parameter | Values | Description |
+|---|---|---|
+| `id` | shortcode key | Which link to route to |
+| `ref` | any string | Optional referral tag |
+| `mode` | `timed` / `direct` | Countdown or instant redirect |
 
-To change the admin password, generate a new master hash (see "Generating hashes" below) and replace `G_CONFIG.settings.masterHash` in `index.html`.
-
-## Adding / editing links
-Links live in `G_CONFIG.links` in `index.html`. Example entries:
-```js
-'MyShort': { url: 'https://example.com/path', locked: false }
-'SecretLink': { url: 'https://example.com/secret', locked: true, hash: '<sha256-hash>' }
 ```
-- `locked: true` makes a link require a password in the browser before redirecting.
-- `hash` must be the SHA-256-style hash produced by the included generator routine (see Ls-Pw-Gen.html). The salt used must match `G_CONFIG.settings.salt`.
+index.html?id=Kynto&ref=TikTok&mode=direct
+```
 
-## Generating hashes & obfuscating webhooks
-Open `Ls-Pw-Gen.html`:
-- HASH_CONVERTER: Use this to produce the `masterHash` or a locked-link hash. The generator performs:
-  base64(password + salt) → base64(result) → SHA-256(hex)
-  Use the same `salt` value as in `G_CONFIG.settings.salt`.
-- WEBHOOK_OBFUSCATOR: Splits and base64-encodes a webhook URL into two parts (partA and partB). These populate `G_CONFIG.settings.hookA` and `hookB` in `index.html`.
+---
 
-If you do not want webhook reporting, remove or clear `hookA`/`hookB` in `index.html` to prevent the app from attempting to POST hits.
+## links.json Structure
 
-## Webhook & IP behavior
-- The webhook is reconstructed client-side from the two base64 parts and used to POST a payload when a link is visited.
-- The app attempts to fetch the visitor IP from ipify (`https://api.ipify.org?format=json`) to include it in the payload. If that request fails, IP will be "N/A".
-- If you care about privacy, do not configure a webhook or remove the ipify lookup.
+```json
+{
+  "settings": {
+    "salts": ["your_salt_here"],
+    "masterHash": "sha256-hex-of-admin-password",
+    "hookA": "base64-first-half-of-webhook",
+    "hookB": "base64-second-half-of-webhook",
+    "maxAdminAttempts": 5
+  },
+  "links": {
+    "SHORTCODE": {
+      "url": "https://destination.com",
+      "locked": false,
+      "hash": null,
+      "expires": null,
+      "message": null,
+      "oneTime": false,
+      "oneTimePass": null
+    }
+  }
+}
+```
 
-## Security & privacy (READ CAREFULLY)
-- All configuration (salt, masterHash, webhook parts, links and their hashes) is stored in plain JavaScript in `index.html`. Anyone with access to the file or deployed page can read them.
-- Password checks for locked links are performed entirely client-side. Because the salt and hashes are public in the source, a determined user can bypass or discover passwords.
-- Webhook reporting and IP lookup can leak visitor information. Do not enable these features on public deployments unless you understand the implications.
-- This project is educational/personal in nature. For any real security needs, implement server-side validation, password hashing, and server-side webhook handling.
+### Link fields
 
-## Configuration pointers
-- Salt: `G_CONFIG.settings.salt`
-- Master hash: `G_CONFIG.settings.masterHash`
-- Webhook parts: `G_CONFIG.settings.hookA` and `hookB` (base64 strings)
-- Links: `G_CONFIG.links` object
+| Field | Required | Description |
+|---|---|---|
+| `url` | Yes | Destination URL |
+| `locked` | Yes | `true` to require a password before redirecting |
+| `hash` | If locked | SHA-256 hash of the lock password |
+| `expires` | No | ISO date string `"2025-12-31"` — link blocks after this day |
+| `message` | No | Custom text shown during the countdown |
+| `oneTime` | No | `true` to allow only one visit per browser |
+| `oneTimePass` | No | Hash of an override password to reset a claim from the blocked screen |
 
-Remember: if you change the salt, re-generate all hashes that depend on it.
+### Old format — still supported
+
+```json
+"OldLink": { "url": "https://example.com", "locked": false }
+```
+
+All new fields are optional. Missing fields default to `null`/`false` safely.
+
+---
+
+## Test Entries
+
+The included `links.json` has three demo entries alongside the real links:
+
+| Shortcode | Demonstrates |
+|---|---|
+| `TEST_basic` | Standard redirect with a custom message |
+| `TEST_expiry` | Expired link — shows the SIGNAL_DEAD screen immediately |
+| `TEST_onetime` | One-time link — blocks on second visit in the same browser |
+
+Delete these before going live.
+
+---
+
+## Management Dashboard (Ls-Pw-Gen.html)
+
+Open `Ls-Pw-Gen.html` in any browser. It auto-loads `links.json` on open.
+
+### Links tab
+- View all registered links with status badges
+- Add new links — hashing handled automatically
+- Inline edit any link (URL, message, expiry, lock status, hashes)
+- Reorder with up/down buttons
+- Delete with confirmation
+
+### Settings tab
+- **Salt table** — add/remove salts. The app tries every salt on every hash check so entries never need to carry a "which salt" field. Add freely, remove carefully — removing a salt breaks any hashes made with it
+- **Admin password hash** — paste a new hash here to change the admin password
+- **Discord webhook** — edit hookA/hookB or use the obfuscator in Hash Tools
+- **Max lockout attempts** — default 5
+
+### Hash Tools tab
+- **Hash Generator** — produces SHA-256 via `btoa(pass+salt) → btoa → SHA-256`. Shows which salt was used
+- **Webhook Obfuscator** — splits a Discord webhook URL into hookA/hookB. One-click apply to Settings
+- **Webhook Revealer** — decodes hookA+hookB back to the full URL for verification
+
+### Export tab
+- Builds the complete `links.json` ready to copy and paste back into your file
+- Shows a timestamped change log of everything edited this session
+- Save Backup button right there before you export
+
+### Backups tab
+- Save named backups to browser localStorage
+- **Pin** backups — pinned backups never count toward the auto-delete limit and are never auto-deleted
+- **Rename** and **delete** any backup
+- **Auto-purge** — set a limit (10, 20, 50, or none). When exceeded, oldest unpinned backups are deleted automatically. Pinned backups are untouched
+- **Load** any backup into the working session
+
+### Workflow
+
+```
+Open Ls-Pw-Gen.html
+  → Make changes (Links / Settings tabs)
+  → Export tab → click Regenerate → copy the JSON
+  → Paste into links.json in your repo
+  → Commit and push
+```
+
+The tool can read `links.json` but cannot write back to it — that requires a server. The copy-paste step is the manual part of a static setup.
+
+---
+
+## Salt System
+
+The multi-salt system means you can use different salts for different links without tracking which is which. The app tries every salt in `settings.salts` on every password check until one matches.
+
+**Rules:**
+- Add new salts at any time — safe, never breaks anything
+- Do not remove a salt if any existing hash was generated with it — the hash will stop working
+- The salt used when generating a hash via the dashboard is shown in the output so you know which one to keep
+
+---
+
+## Admin Panel (in index.html)
+
+Open `index.html` with no URL parameters. Enter the operator password.
+
+- Build and copy query strings with ref tags and mode selection
+- Quick-fill the builder from any link card
+- Generate QR codes for any shortcode
+- Reset one-time claim flags
+- Reset the auto-bypass preference
+
+### Changing the admin password
+
+1. `Ls-Pw-Gen.html` → Hash Tools → Hash Generator
+2. Enter your salt and new password → copy the hash
+3. `Ls-Pw-Gen.html` → Settings → Admin Password Hash → paste → Save
+4. Export → copy JSON → paste into `links.json` → commit
+
+---
+
+## Admin Lockout
+
+5 wrong passwords fills 5 red dots one by one, shaking the card each time. On the 5th failure the screen switches to a dramatic **ACCESS_TERMINATED** view with a staggered fake trace:
+
+```
+> BREACH_DETECTED: excessive auth failures
+> LOGGING_INCIDENT: session fingerprinted
+> UPLINK_PROTOCOL: terminal suspended
+> OPERATOR_ALERT: notified ✓
+```
+
+The "operator notified" line is a complete lie. There is no server. The lockout is stored in `localStorage` as `uplink_admin_locked` and clears when site data is cleared.
+
+---
+
+## Discord Webhook
+
+Hit reports include: shortcode, ref tag, mode, visitor IP (via ipify), destination URL, and one-time status.
+
+**Setup:**
+1. Create a webhook in your Discord server (Server Settings → Integrations → Webhooks)
+2. `Ls-Pw-Gen.html` → Hash Tools → Webhook Obfuscator → paste URL → Split and Encode
+3. Click "Apply to Settings" → go to Export → copy → paste into `links.json`
+
+**Disable:** set `hookA` and `hookB` to empty strings `""`.
+
+---
+
+## One-Time Visit Links
+
+Set `"oneTime": true`. After first visit the browser stores a timestamp in `localStorage` under `uplink_visited_SHORTCODE` and subsequent visits show the **LINK_CLAIMED** screen with a fake trace showing when they first visited.
+
+**Optional override:** set `oneTimePass` to a hash. Entering the correct password on the claimed screen resets the flag and re-runs the router. Useful for "I sent this link to one person who needs to re-open it".
+
+**Reset from admin panel:** `index.html` admin panel → Reset One-Time Claim section → enter shortcode → Clear.
+
+---
+
+## localStorage Keys
+
+| Key | Purpose |
+|---|---|
+| `uplink_visited_SHORTCODE` | One-time visit flag, one per shortcode |
+| `uplink_admin_attempts` | Wrong password counter (resets on success) |
+| `uplink_admin_locked` | Lockout flag after max failures |
+| `autoSkip` | User's instant-redirect preference |
+| `uplink_backup_TIMESTAMP` | Saved backup (one per backup) |
+| `uplink_backup_limit` | User's chosen auto-purge limit |
+
+---
 
 ## Deployment
-This is a static app and can be hosted on any static hosting provider (GitHub Pages, Netlify, Vercel, etc.). However:
-- Redirect targets are external and require network access.
-- If webhook reporting is configured, the site must be able to reach Discord's webhook endpoints.
 
-## Example link entries (from this repo)
-```js
-'BUa8b2': { url: 'https://imgur.com/a/got-you-45Qpn5g', locked: false },
-'Hsi822b': { url: 'https://imgur.com/a/7SSpM0k', locked: false },
-'Kynto': { url: 'https://discord.gg/K58KvmwftD', locked: false },
-'Voltsim': { url: 'https://discord.gg/AC8MhtVfF6', locked: false },
-'PwTest': { url: 'https://dummyimage.com/600x400/000/fff.png&text=Pw+Test', locked: true, hash: '74a7b26e07efe4547ffa4bc907df05d141cc6e4e5671c51afea958eda3b13ad9' }
+Static files — no build step, no server required.
+
+| Host | How |
+|---|---|
+| **GitHub Pages** | Push repo, enable Pages in Settings → Pages |
+| **Netlify** | Drag and drop the folder |
+| **Vercel** | Connect the repo, deploy |
+| **Cloudflare Pages** | Connect the repo |
+| **Local** | `npx serve .` then open `http://localhost:3000` |
+
+All three files must be served from the same origin and directory.
+
+---
+
+## Security Notes
+
+- All config (salts, hashes, webhook parts) is readable in plain JSON by anyone who views `links.json`
+- Password checks are entirely client-side — a determined person with the hash and salt table can brute-force
+- The webhook split is obfuscation, not encryption
+- IP logging uses a third-party service (ipify)
+- The admin lockout and one-time visit flags are stored in `localStorage` and clear with site data
+- **This project is a personal deterrent, not a security system.** It works brilliantly for keeping casual nosy people out. It will not stop someone who understands browser dev tools.
+
+---
+
+## Backwards Compatibility
+
+All original-format links work without changes:
+
+```json
+"OldLink": { "url": "https://example.com", "locked": false }
 ```
 
-## Contributing
-This is a small personal project. Suggestions and pull requests are welcome — especially for:
-- Improving security by moving sensitive logic to server-side endpoints.
-- Making webhook reporting optional/configurable without exposing secrets.
-- Documentation and usability improvements.
+New fields are optional and default safely.
 
-If you submit a PR that changes hashing or salt behavior, include clear migration steps.
+---
 
 ## License
-This project is released under the GNU GPL v3. See the included LICENSE file for full terms.
+
+GNU GPL v3 — see `LICENSE`.
 
 ## Contact
-- GitHub: [ElectroBoy10](https://github.com/ElectroBoy10)
 
-If you have security or privacy concerns, avoid posting secrets in public issues; use a private channel if possible.
+GitHub: [ElectroBoy10](https://github.com/ElectroBoy10)
 
-Enjoy — and please avoid exposing this to public users without addressing the security considerations above.
+Don't post secrets (webhook URLs, passwords) in public issues.
