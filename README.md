@@ -107,20 +107,6 @@ All new fields are optional. Missing fields default to `null`/`false` safely.
 
 ---
 
-## Test Entries
-
-The included `links.json` has three demo entries alongside the real links:
-
-| Shortcode | Demonstrates |
-|---|---|
-| `TEST_basic` | Standard redirect with a custom message |
-| `TEST_expiry` | Expired link — shows the SIGNAL_DEAD screen immediately |
-| `TEST_onetime` | One-time link — blocks on second visit in the same browser |
-
-Delete these before going live.
-
----
-
 ## Management Dashboard (Ls-Pw-Gen.html)
 
 Open `Ls-Pw-Gen.html` in any browser. It auto-loads `links.json` on open.
@@ -298,3 +284,5 @@ GNU GPL v3 — see `LICENSE`.
 GitHub: [ElectroBoy10](https://github.com/ElectroBoy10)
 
 Don't post secrets (webhook URLs, passwords) in public issues.
+(hmmmm just excuse my discord webhook in plain site i have no backend and its my only option for now)
+(used claud ai to edit my original files and add new features)
