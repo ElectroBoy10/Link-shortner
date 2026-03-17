@@ -17,26 +17,40 @@
       "message": null,
       "oneTime": false
     },
-    "Kynto": {
-      "url": "https://discord.gg/K58KvmwftD",
-      "locked": false,
-      "expires": null,
-      "message": "Establishing Discord relay...",
-      "oneTime": false
-    },
-    "Voltsim": {
-      "url": "https://discord.gg/AC8MhtVfF6",
-      "locked": false,
-      "expires": null,
-      "message": "Establishing Discord relay...",
-      "oneTime": false
-    },
     "Pwtest": {
       "url": "https://dummyimage.com/600x400/000/fff.png&text=Pw+Test",
       "locked": true,
       "hash": "efe61162a78422d2f92be5552a873a65e88de423b21b1c2b43e6941fd1677a71",
       "expires": null,
       "message": "Redirect to server",
+      "oneTime": false
+    },
+    "EGDPNG1": {
+      "url": "https://www.hello-hayley.com/wp-content/uploads/2024/11/boys-bathroom-ideas-25.jpg",
+      "locked": false,
+      "expires": null,
+      "message": "Redirecting to PNG1 (EGD prodject)",
+      "oneTime": false
+    },
+    "EGDPNG2": {
+      "url": "https://pin.it/4tIEgtCW6",
+      "locked": false,
+      "expires": null,
+      "message": "Redirecting to PNG2(EGD Prodject)",
+      "oneTime": false
+    },
+    "EGDPNG2alt2": {
+      "url": "https://www.pinterest.com/pin/887772145298811216/",
+      "locked": false,
+      "expires": null,
+      "message": "Connecting to a alt link of png2 (EGD prodject)",
+      "oneTime": false
+    },
+    "EGDPNG3": {
+      "url": "https://images.adsttc.com/media/images/5e93/8c79/b357/65ca/ec00/0611/medium_jpg/KHB390-60104-1.jpg?1586728042",
+      "locked": false,
+      "expires": null,
+      "message": "Redirecting to PNG3 (EGD PRODJECT)",
       "oneTime": false
     }
   }
