@@ -52,6 +52,20 @@
       "expires": null,
       "message": "Redirecting to PNG3 (EGD PRODJECT)",
       "oneTime": false
+    },
+    "EGDPNG4": {
+      "url": "https://images.adsttc.com/media/images/5e93/905e/b357/6547/dd00/027e/medium_jpg/Cor_035_Guarderia_Kindergarden_019_03611_30.jpg?1586729042",
+      "locked": false,
+      "expires": null,
+      "message": "Redirecting to PNG4 (EGP Prodject)",
+      "oneTime": false
+    },
+    "EGDPNG5": {
+      "url": "https://meilong-ceramics.com/product/detail/we-9033/",
+      "locked": false,
+      "expires": null,
+      "message": "Redirecting to png5 (EGD Prodject)",
+      "oneTime": false
     }
   }
 }
