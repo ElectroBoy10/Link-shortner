@@ -11,6 +11,7 @@
     "maxAdminAttempts": 5
   },
   "links": {
+
     "BUa8b2": {
       "url": "https://imgur.com/a/hCeI6rz",
       "locked": false,
@@ -18,6 +19,7 @@
       "message": null,
       "oneTime": false
     },
+
     "Pwtest": {
       "url": "https://dummyimage.com/600x400/000/fff.png&text=Pw+Test",
       "locked": true,
@@ -26,131 +28,136 @@
       "message": "Redirect to server",
       "oneTime": false
     },
-    "EGDPNG1": {
+
+    "EGD-S1-1": {
       "url": "https://www.hello-hayley.com/wp-content/uploads/2024/11/boys-bathroom-ideas-25.jpg",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to PNG1 (EGD prodject)",
+      "message": "EGD Project — Section 1, Image 1",
       "oneTime": false
     },
-    "EGDPNG2": {
+    "EGD-S1-2": {
       "url": "https://pin.it/4tIEgtCW6",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to PNG2(EGD Prodject)",
+      "message": "EGD Project — Section 1, Image 2",
       "oneTime": false
     },
-    "EGDPNG2alt2": {
+    "EGD-S1-2B": {
       "url": "https://www.pinterest.com/pin/887772145298811216/",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Connecting to a alt link of png2 (EGD prodject)",
+      "message": "EGD Project — Section 1, Image 2 (Alt Link)",
       "oneTime": false
     },
-    "EGDPNG3": {
+    "EGD-S1-3": {
       "url": "https://images.adsttc.com/media/images/5e93/8c79/b357/65ca/ec00/0611/medium_jpg/KHB390-60104-1.jpg?1586728042",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to PNG3 (EGD PRODJECT)",
+      "message": "EGD Project — Section 1, Image 3",
       "oneTime": false
     },
-    "EGDPNG4": {
+    "EGD-S1-4": {
       "url": "https://images.adsttc.com/media/images/5e93/905e/b357/6547/dd00/027e/medium_jpg/Cor_035_Guarderia_Kindergarden_019_03611_30.jpg?1586729042",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to PNG4 (EGP Prodject)",
+      "message": "EGD Project — Section 1, Image 4",
       "oneTime": false
     },
-    "EGDPNG5": {
+    "EGD-S1-5": {
       "url": "https://meilong-ceramics.com/product/detail/we-9033/",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to png5 (EGD Prodject)",
+      "message": "EGD Project — Section 1, Image 5",
       "oneTime": false
     },
-    "1EGDPNG1": {
+
+    "EGD-S2-1": {
       "url": "https://stylemasterpatios.com.au/wp-content/uploads/2020/05/school-cevered-walkways.jpg",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to 2nd page PNG1",
+      "message": "EGD Project — Section 2, Image 1",
       "oneTime": false
     },
-    "1EGDPNG2": {
+    "EGD-S2-2": {
       "url": "https://www.aceshelters.co.uk/wp-content/uploads/2021/12/Barrel-Roof-Covered-Walkway.pdf",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to a pdf",
+      "message": "EGD Project — Section 2, Image 2 (PDF)",
       "oneTime": false
     },
-    "1IGOPNG3": {
+    "EGD-S2-3": {
       "url": "https://www.canopiesuk.co.uk/wp-content/uploads/2019/08/h022-Connekt-Walkway-Canopy-960x600.jpg",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to PNG3",
+      "message": "EGD Project — Section 2, Image 3",
       "oneTime": false
     },
-    "1IGOPNG4": {
+    "EGD-S2-4": {
       "url": "https://atsawnings.com.au/wp-content/uploads/2024/06/school-walkways-2-1536x1024.jpg",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to PNG4",
+      "message": "EGD Project — Section 2, Image 4",
       "oneTime": false
     },
-    "1IGOPNG5": {
+    "EGD-S2-5": {
       "url": "https://media.craiyon.com/2025-09-28/zhmaljjaQEq-cOLvQgDCVA.webp",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to PNG5",
+      "message": "EGD Project — Section 2, Image 5",
       "oneTime": false
     },
-    "2IGO1": {
+
+    "EGD-S3-1": {
       "url": "https://www.thehousedesigners.com/articles/images/skylights-for-every-roof-pitch-ceiling-1.jpg",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to png1",
+      "message": "EGD Project — Section 3, Image 1",
       "oneTime": false
     },
-    "2IGO2": {
+    "EGD-S3-2": {
       "url": "https://www.thehousedesigners.com/articles/images/skylights-for-every-roof-pitch-ceiling-3.jpg",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to Png2",
+      "message": "EGD Project — Section 3, Image 2",
       "oneTime": false
     },
-    "2IGO3": {
+    "EGD-S3-3": {
       "url": "https://signet.co.in/wp-content/uploads/2025/11/img_prod_mount03.jpg",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to png 3",
+      "message": "EGD Project — Section 3, Image 3",
       "oneTime": false
     },
-    "3EGD1": {
+
+    "EGD-S4-1": {
       "url": "https://www.soundproofroomdividers.com/wp-content/uploads/2017/10/sound-proof-room-dividers-480x360.jpg",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to png 1",
+      "message": "EGD Project — Section 4, Image 1",
       "oneTime": false
     },
-    "3EGD2dot1": {
+    "EGD-S4-2": {
       "url": "https://scandicwall.com/wp-content/uploads/2024/07/coworking1.webp",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to png 2.1",
+      "message": "EGD Project — Section 4, Image 2",
       "oneTime": false
     },
-    "3EGD2dot2": {
+    "EGD-S4-2B": {
       "url": "https://scandicwall.com/wp-content/uploads/2024/07/coworking9.webp",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Redirecting to png 2.2",
+      "message": "EGD Project — Section 4, Image 2 (Alt Link)",
       "oneTime": false
     },
-    "3EGD3": {
+    "EGD-S4-3": {
       "url": "https://canuckdoorsystems.com/wp-content/webp-express/webp-images/doc-root/wp-content/uploads/2017/12/series-3300-1-540x400.jpg.webp",
       "locked": false,
       "expires": "2028-01-01",
-      "message": "Connecting to PNG3",
+      "message": "EGD Project — Section 4, Image 3",
       "oneTime": false
     }
+
   }
 }
