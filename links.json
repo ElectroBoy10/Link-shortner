@@ -102,6 +102,55 @@
       "expires": "2028-01-01",
       "message": "Redirecting to PNG5",
       "oneTime": false
+    },
+    "2IGO1": {
+      "url": "https://www.thehousedesigners.com/articles/images/skylights-for-every-roof-pitch-ceiling-1.jpg",
+      "locked": false,
+      "expires": "2028-01-01",
+      "message": "Redirecting to png1",
+      "oneTime": false
+    },
+    "2IGO2": {
+      "url": "https://www.thehousedesigners.com/articles/images/skylights-for-every-roof-pitch-ceiling-3.jpg",
+      "locked": false,
+      "expires": "2028-01-01",
+      "message": "Redirecting to Png2",
+      "oneTime": false
+    },
+    "2IGO3": {
+      "url": "https://signet.co.in/wp-content/uploads/2025/11/img_prod_mount03.jpg",
+      "locked": false,
+      "expires": "2028-01-01",
+      "message": "Redirecting to png 3",
+      "oneTime": false
+    },
+    "3EGD1": {
+      "url": "https://www.soundproofroomdividers.com/wp-content/uploads/2017/10/sound-proof-room-dividers-480x360.jpg",
+      "locked": false,
+      "expires": "2028-01-01",
+      "message": "Redirecting to png 1",
+      "oneTime": false
+    },
+    "3EGD2dot1": {
+      "url": "https://scandicwall.com/wp-content/uploads/2024/07/coworking1.webp",
+      "locked": false,
+      "expires": "2028-01-01",
+      "message": "Redirecting to png 2.1",
+      "oneTime": false
+    },
+    "3EGD2dot2": {
+      "url": "https://scandicwall.com/wp-content/uploads/2024/07/coworking9.webp",
+      "locked": false,
+      "expires": "2028-01-01",
+      "message": "Redirecting to png 2.2",
+      "oneTime": false
+    },
+    "3EGD3": {
+      "url": "https://canuckdoorsystems.com/wp-content/webp-express/webp-images/doc-root/wp-content/uploads/2017/12/series-3300-1-540x400.jpg.webp",
+      "locked": false,
+      "expires": "2028-01-01",
+      "message": "Connecting to PNG3",
+      "oneTime": false
     }
   }
 }
