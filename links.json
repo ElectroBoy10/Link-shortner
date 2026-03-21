@@ -2,7 +2,8 @@
   "settings": {
     "salts": [
       "my_secret_salt_123",
-      "Saltastic"
+      "Saltastic",
+      "8HBeu3urbd"
     ],
     "masterHash": "dc02833e8dba6d393d3f38f678612bbd688aacd85a98afbc95481c352dfefe02",
     "hookA": "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQxMDQ3NTA1NjY4NDk5MDYzNS9KcDFMeFBy",
@@ -20,7 +21,7 @@
     "Pwtest": {
       "url": "https://dummyimage.com/600x400/000/fff.png&text=Pw+Test",
       "locked": true,
-      "hash": "efe61162a78422d2f92be5552a873a65e88de423b21b1c2b43e6941fd1677a71",
+      "hash": "469164c6ebbb09af80462c7a1d35034db40766fbc9495a8df1c4b278bc0017a7",
       "expires": null,
       "message": "Redirect to server",
       "oneTime": false
