@@ -6,12 +6,11 @@
       "8HBeu3urbd"
     ],
     "masterHash": "dc02833e8dba6d393d3f38f678612bbd688aacd85a98afbc95481c352dfefe02",
-    "hookA": "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQxMDQ3NTA1NjY4NDk5MDYzNS9KcDFMeFBy",
-    "hookB": "ZV9GVHlMUU9fVnFNa0piRGw5cWtxdXRZVC1mYTQ5T1FRLXlzNXdjVkhGbllsSEdrdVB3QTBIZjY1RHpveg==",
+    "hookA": "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ5NjQ0OTM1NTk4NzgxNjQ4OC9mdmZad29x",
+    "hookB": "cUljM1lDMlRMSWNuUEpVQWJFQVVySkpYSF9PcHdkMURGaVBVdGpqSDZaS3VJWVVNajdoZFZaak1YdjF6ZA==",
     "maxAdminAttempts": 5
   },
   "links": {
-
     "BUa8b2": {
       "url": "https://imgur.com/a/hCeI6rz",
       "locked": false,
@@ -19,7 +18,6 @@
       "message": null,
       "oneTime": false
     },
-
     "Pwtest": {
       "url": "https://dummyimage.com/600x400/000/fff.png&text=Pw+Test",
       "locked": true,
@@ -28,7 +26,6 @@
       "message": "Redirect to server",
       "oneTime": false
     },
-
     "EGD-S1-1": {
       "url": "https://www.hello-hayley.com/wp-content/uploads/2024/11/boys-bathroom-ideas-25.jpg",
       "locked": false,
@@ -71,7 +68,6 @@
       "message": "EGD Project — Section 1, Image 5",
       "oneTime": false
     },
-
     "EGD-S2-1": {
       "url": "https://stylemasterpatios.com.au/wp-content/uploads/2020/05/school-cevered-walkways.jpg",
       "locked": false,
@@ -107,7 +103,6 @@
       "message": "EGD Project — Section 2, Image 5",
       "oneTime": false
     },
-
     "EGD-S3-1": {
       "url": "https://www.thehousedesigners.com/articles/images/skylights-for-every-roof-pitch-ceiling-1.jpg",
       "locked": false,
@@ -129,7 +124,6 @@
       "message": "EGD Project — Section 3, Image 3",
       "oneTime": false
     },
-
     "EGD-S4-1": {
       "url": "https://www.soundproofroomdividers.com/wp-content/uploads/2017/10/sound-proof-room-dividers-480x360.jpg",
       "locked": false,
@@ -158,6 +152,5 @@
       "message": "EGD Project — Section 4, Image 3",
       "oneTime": false
     }
-
   }
 }
