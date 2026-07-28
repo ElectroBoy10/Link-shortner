@@ -3,9 +3,10 @@
     "salts": [
       "my_secret_salt_123",
       "Saltastic",
-      "8HBeu3urbd"
+      "8HBeu3urbd",
+      "F6f6f5vugyguvthuvyhufyhucu0"
     ],
-    "masterHash": "dc02833e8dba6d393d3f38f678612bbd688aacd85a98afbc95481c352dfefe02",
+    "masterHash": "1aa8664df576c6df6877976f31f7fb06073ae1c22d3d93c6facece5b17151101",
     "hookA": "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ5NjQ0OTM1NTk4NzgxNjQ4OC9mdmZad29x",
     "hookB": "cUljM1lDMlRMSWNuUEpVQWJFQVVySkpYSF9PcHdkMURGaVBVdGpqSDZaS3VJWVVNajdoZFZaak1YdjF6ZA==",
     "maxAdminAttempts": 5
